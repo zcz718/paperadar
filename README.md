@@ -111,18 +111,24 @@ writes plain Markdown into a folder of your choice — no vault required.
 papers get fetched, so adding `physics.comp-ph` or `econ.GN` is all it takes to
 follow a new field.
 
+**Sensitivity, not source tiers.** Every accessible source is searched, and a
+paper surfaces on keyword relevance — not on which site it came from (a
+biophysics paper in PubMed still reaches a physicist). You tune how much
+surfaces with `search_sensitivity`: `broad` (a single abstract match passes),
+`balanced` (the default — needs a title match), `strict`, or a bare number.
+
 **Sources beyond arXiv + Semantic Scholar** (both always run and both span
 every discipline):
 
 | Setting | Source | Behaviour |
 |---|---|---|
 | `crossref.enabled: auto` | Crossref (~180M DOIs, all fields) | On by default — no key needed. Catches freshly-registered papers across every field, often before aggregators index them. |
-| `openalex.enabled: auto` | OpenAlex (~270M works, all fields) | Runs when `OPENALEX_API_KEY` is set. A key is [free](https://openalex.org) and takes under a minute; without one this source is skipped silently. |
-| `core.enabled: auto` | CORE (~400M OA works) | Open-access repositories — theses, working papers, deposits. Runs when `CORE_API_KEY` is set ([free](https://core.ac.uk/services/api)); skipped otherwise. |
-| `bio_sources: auto` | bioRxiv, medRxiv, PubMed | Runs only when your interests look biomedical (a `q-bio.*` category or a bio keyword). Set `true`/`false` to force. |
+| `bio_sources: true` | bioRxiv, medRxiv, PubMed | Searched by default. Set `false` only to skip them (e.g. to keep a non-biomedical run lean). |
+| `openalex.enabled: auto` | OpenAlex (~270M works, all fields) | Needs `OPENALEX_API_KEY` ([free](https://openalex.org), under a minute) — a key is required to reach OpenAlex at all. Skipped silently without one. |
+| `core.enabled: auto` | CORE (~400M OA works) | Open-access repositories — theses, working papers, deposits. Needs `CORE_API_KEY` ([free](https://core.ac.uk/services/api)). Skipped without one. |
 
-Every source returns results in one schema and gets re-scored against your
-config, so adding a source widens coverage without changing how ranking works.
+Every source returns results in one schema and gets re-scored — source-neutrally
+— against your config, so adding a source only ever widens coverage.
 
 **Journal filter.** `prioritize_journals` restricts PubMed and Semantic Scholar
 to a list of venues (journals or conferences). Preprints, OpenAlex, Crossref,

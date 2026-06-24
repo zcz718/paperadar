@@ -175,29 +175,51 @@ def test_config_with_research_brief_loads_unchanged(tmp_path):
     assert "ML" in loaded.get("research_domains", {})
 
 
-def test_bio_sources_auto_enabled_for_qbio_category():
-    config = {"research_domains": {"G": {"keywords": ["x"], "arxiv_categories": ["q-bio.GN"]}}}
+def test_bio_sources_on_by_default_even_for_non_bio_config():
+    # Every source is searched by default; topic does not gate the source.
+    config = {"research_domains": {"ML": {"keywords": ["deep learning"], "arxiv_categories": ["cs.LG"]}}}
     assert search_arxiv._bio_sources_enabled(config) is True
 
 
-def test_bio_sources_auto_enabled_for_bio_keyword():
-    config = {"research_domains": {"G": {"keywords": ["chromatin accessibility"], "arxiv_categories": ["cs.LG"]}}}
-    assert search_arxiv._bio_sources_enabled(config) is True
+def test_bio_sources_on_when_key_missing_entirely():
+    assert search_arxiv._bio_sources_enabled({}) is True
 
 
-def test_bio_sources_auto_disabled_for_non_bio_config():
-    config = {"research_domains": {"ML": {"keywords": ["deep learning", "transformer"], "arxiv_categories": ["cs.LG"]}}}
-    assert search_arxiv._bio_sources_enabled(config) is False
+def test_bio_sources_auto_means_on():
+    assert search_arxiv._bio_sources_enabled({"bio_sources": "auto"}) is True
 
 
-def test_bio_sources_explicit_true_overrides_auto():
-    config = {"bio_sources": True, "research_domains": {"ML": {"keywords": ["deep learning"], "arxiv_categories": ["cs.LG"]}}}
-    assert search_arxiv._bio_sources_enabled(config) is True
+def test_bio_sources_explicit_false_disables():
+    assert search_arxiv._bio_sources_enabled({"bio_sources": False}) is False
+    assert search_arxiv._bio_sources_enabled({"bio_sources": "false"}) is False
 
 
-def test_bio_sources_explicit_false_overrides_auto():
-    config = {"bio_sources": False, "research_domains": {"G": {"keywords": ["genome"], "arxiv_categories": ["q-bio.GN"]}}}
-    assert search_arxiv._bio_sources_enabled(config) is False
+def test_bio_sources_explicit_true_enables():
+    assert search_arxiv._bio_sources_enabled({"bio_sources": True}) is True
+
+
+# ---------------------------------------------------------------------------
+# Search sensitivity is the relevance gate (not the source tier)
+# ---------------------------------------------------------------------------
+
+def test_sensitivity_default_is_balanced():
+    assert search_arxiv._resolve_min_relevance({}) == 0.5
+
+
+def test_sensitivity_named_levels():
+    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "broad"}) == 0.3
+    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "balanced"}) == 0.5
+    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "strict"}) == 0.8
+
+
+def test_sensitivity_numeric_override():
+    assert search_arxiv._resolve_min_relevance({"search_sensitivity": 0.7}) == 0.7
+    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "0.65"}) == 0.65
+
+
+def test_sensitivity_garbage_falls_back_to_default():
+    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "nonsense"}) == 0.5
+    assert search_arxiv._resolve_min_relevance({"search_sensitivity": True}) == 0.5
 
 
 # ---------------------------------------------------------------------------

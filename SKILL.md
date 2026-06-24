@@ -212,16 +212,22 @@ cd "$SKILL_DIR"
   --categories "$ARXIV_CATS"
 ```
 
-This always runs arXiv + Semantic Scholar (both span every field). It *also*
-runs, conditionally:
+Every accessible source is searched — what surfaces a paper is keyword
+relevance, not the source's topic. Users narrow results with
+`search_sensitivity` (`broad` / `balanced` / `strict`, or a number), which sets
+the minimum keyword match a paper needs; they do **not** narrow by switching
+sources off by tier.
+
+Always runs arXiv + Semantic Scholar (both span every field), plus:
 - **Crossref** — on by default (no key); the DOI registry, every field. Set
   `crossref.enabled: false` to turn it off.
+- **bioRxiv + medRxiv + PubMed** — searched by default; set `bio_sources: false`
+  only to skip them (e.g. to keep a non-biomedical run lean).
 - **OpenAlex** — when `openalex.enabled` is `true`, or `"auto"` and an
-  `OPENALEX_API_KEY` is set. Skips cleanly otherwise.
+  `OPENALEX_API_KEY` is set. (A key is *required* to reach OpenAlex at all —
+  this is access, not topic gating.) Skips cleanly otherwise.
 - **CORE** — when `core.enabled` is `true`, or `"auto"` and a `CORE_API_KEY`
-  is set (open-access repositories). Skips cleanly otherwise.
-- **bioRxiv + medRxiv + PubMed** — when `bio_sources` is `true`, or `"auto"`
-  and the config looks biomedical (a `q-bio.*` category or a bio keyword).
+  is set (open-access repositories; key required to reach it). Skips otherwise.
 
 Output: `arxiv_filtered.json` with a `top_papers` array (each paper has
 `id, title, authors, abstract, url, published_date, source, note_filename,

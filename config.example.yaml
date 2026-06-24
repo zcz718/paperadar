@@ -51,17 +51,25 @@ output:
 # (Keys are NOT stored in this YAML; use environment variables.)
 
 # ─────────────────────────────────────────────────────────────────────────
-# Sources
+# Sources & sensitivity
 # ─────────────────────────────────────────────────────────────────────────
-# arXiv and Semantic Scholar always run and already span every field.
-#
-# bio_sources controls the biomedical-only sources (bioRxiv, medRxiv, PubMed):
-#   "auto"  — enable only when your interests look biomedical (a q-bio.* arXiv
-#             category or a bio-related keyword). A CS/physics/econ user is not
-#             charged a PubMed round-trip every week.
-#   true    — always query them.
-#   false   — never query them.
-bio_sources: "auto"
+# Philosophy: every accessible source is searched, and what surfaces a paper is
+# keyword relevance — NOT which site it came from. So a biophysics paper in
+# PubMed can still reach a physicist. You narrow results with `search_sensitivity`
+# (below), not by switching sources off.
+
+# How strong a keyword match a paper needs to survive filtering:
+#   "broad"     — widest net; a single abstract keyword match is enough.
+#   "balanced"  — default; needs a title keyword match (or two abstract matches).
+#   "strict"    — only strong matches survive.
+# A bare number (e.g. 0.7) sets the threshold directly.
+search_sensitivity: "balanced"
+
+# Biomedical sources (bioRxiv, medRxiv, PubMed). Searched by default — set this
+# to false only if you never want biomedical results (e.g. to keep runs lean).
+#   true (default) / "auto" — search them.
+#   false                   — skip them.
+bio_sources: true
 
 # OpenAlex (https://openalex.org) — ~270M works across ALL disciplines, with
 # open-access PDFs and topic tags. Needs a free API key (30-second signup).

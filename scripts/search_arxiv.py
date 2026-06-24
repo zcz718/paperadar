@@ -706,42 +706,46 @@ def parse_arxiv_xml(xml_content: str) -> List[Dict]:
 # backward compatibility with existing tests and call sites.
 
 
-# Keyword fragments that signal a biomedical research focus, used by the
-# "auto" branch of `bio_sources` to decide whether the bio-only sources
-# (bioRxiv/medRxiv/PubMed) are worth querying for this user.
-_BIO_KEYWORD_INDICATORS = (
-    "genom", "rna", "dna", "cell", "protein", "sequenc", "transcri",
-    "epigenom", "chromatin", "crispr", "methylat", "bioinfo", "phylogen",
-    "organism", "tissue", "neuron", "cancer", "immun", "microb",
-)
-
-
 def _bio_sources_enabled(config: Dict) -> bool:
-    """Decide whether the bio-only sources (bioRxiv/medRxiv/PubMed) run.
+    """Whether the biomedical sources (bioRxiv/medRxiv/PubMed) are searched.
 
-    `bio_sources` in the config may be:
-      True / "true"   — always query the bio sources.
-      False / "false" — never query them.
-      "auto" (default)— enable only when the user's interests look biomedical,
-                        i.e. some domain has a `q-bio.*` arXiv category or a
-                        keyword matching a bio-indicator fragment. This keeps
-                        a physics/CS/econ user from hitting PubMed every run.
+    paperadar searches every accessible source by default — what surfaces a
+    paper is keyword relevance, NOT the source's topic. A biophysics result in
+    PubMed should reach a physicist, so these run unless the user explicitly
+    turns them off with `bio_sources: false`. ("auto" and true both mean on.)
     """
-    setting = config.get("bio_sources", "auto")
-    if setting is True or setting == "true":
-        return True
-    if setting is False or setting == "false":
-        return False
-    # "auto" (or anything unrecognised) → inspect the configured interests.
-    for domain in (config.get("research_domains") or {}).values():
-        for cat in (domain.get("arxiv_categories") or []):
-            if str(cat).startswith("q-bio."):
-                return True
-        for kw in (domain.get("keywords") or []):
-            kl = str(kw).lower()
-            if any(ind in kl for ind in _BIO_KEYWORD_INDICATORS):
-                return True
-    return False
+    setting = config.get("bio_sources", True)
+    return not (setting is False or setting == "false")
+
+
+# Search sensitivity is the real gate: how strong a keyword match a paper needs
+# to survive filtering. This — not the choice of source — is what narrows the
+# results. Named levels map to a minimum keyword-only relevance score; a bare
+# number sets the threshold directly.
+_SENSITIVITY_LEVELS = {"broad": 0.3, "balanced": 0.5, "strict": 0.8}
+
+
+def _resolve_min_relevance(config: Dict) -> float:
+    """Resolve the keyword-relevance threshold from `search_sensitivity`.
+
+    "broad" casts the widest net (a single abstract keyword match passes),
+    "balanced" (default) needs a title match, "strict" wants a strong match.
+    A numeric value overrides the threshold directly.
+    """
+    s = config.get("search_sensitivity", "balanced")
+    if isinstance(s, bool):  # bool is an int subclass — ignore it
+        return MIN_KEYWORD_ONLY_RELEVANCE
+    if isinstance(s, (int, float)):
+        return float(s)
+    if isinstance(s, str):
+        key = s.strip().lower()
+        if key in _SENSITIVITY_LEVELS:
+            return _SENSITIVITY_LEVELS[key]
+        try:
+            return float(key)
+        except ValueError:
+            pass
+    return MIN_KEYWORD_ONLY_RELEVANCE
 
 
 def _extra_source_enabled(spec: Dict, config: Dict) -> bool:
@@ -771,8 +775,7 @@ def filter_and_score_papers(
     papers: List[Dict],
     config: Dict,
     target_date: Optional[datetime] = None,
-    is_hot_paper_batch: bool = False,
-    bio_boost: bool = True
+    is_hot_paper_batch: bool = False
 ) -> List[Dict]:
     """
     Filter and score a list of papers.
@@ -788,6 +791,7 @@ def filter_and_score_papers(
     """
     domains = config.get('research_domains', {})
     excluded_keywords = config.get('excluded_keywords', [])
+    min_relevance = _resolve_min_relevance(config)
 
     scored_papers = []
 
@@ -805,16 +809,9 @@ def filter_and_score_papers(
             paper, domains, excluded_keywords
         )
 
-        # Biology source boost: bioRxiv/medRxiv/PubMed get +10% relevance when
-        # biology-specific keywords matched (compensates for lower arXiv bio content).
-        # Only applied when bio sources are enabled for this user (bio_boost).
-        if bio_boost and paper.get('source') in ('bioRxiv', 'medRxiv', 'PubMed') and matched_keywords:
-            matched_text = ' '.join(matched_keywords).lower()
-            bio_terms = {'genom', 'epigenom', 'chromatin', 'transcription',
-                         'methylation', 'sequencing', 'rna', 'dna',
-                         'single-cell', 'cell', 'protein'}
-            if any(t in matched_text for t in bio_terms):
-                relevance = min(relevance * 1.1, SCORE_MAX)
+        # Scoring is source-neutral: a paper is ranked by how well it matches
+        # the user's keywords, not by which site it came from. (No per-source
+        # boosts — the source a paper arrives from must not tilt its rank.)
 
         # Skip papers with zero relevance
         if relevance == 0:
@@ -825,7 +822,7 @@ def filter_and_score_papers(
         # abstract word from being included.
         n_cat_matches = sum(1 for kw in matched_keywords if ARXIV_CATEGORY_PATTERN.match(kw))
         keyword_only_score = relevance - n_cat_matches * RELEVANCE_CATEGORY_MATCH_BOOST
-        if keyword_only_score < MIN_KEYWORD_ONLY_RELEVANCE:
+        if keyword_only_score < min_relevance:
             continue
 
         # Compute recency
@@ -1097,16 +1094,14 @@ def main():
                 papers=bio_papers,
                 config=config,
                 target_date=target_date,
-                is_hot_paper_batch=False,
-                bio_boost=True
+                is_hot_paper_batch=False
             )
             logger.info("Scored %d bio-source papers", len(scored_bio))
             all_scored_papers.extend(scored_bio)
     elif not bio_enabled:
         bio_status = "disabled"
-        logger.info("Bio sources disabled for this config "
-                    "(bio_sources=false, or 'auto' found no biomedical "
-                    "interests) — skipping bioRxiv/medRxiv/PubMed")
+        logger.info("Bio sources turned off (bio_sources: false) "
+                    "— skipping bioRxiv/medRxiv/PubMed")
     else:
         logger.info("Bio sources not available — install search_pubmed.py "
                     "and search_biorxiv.py to enable")
@@ -1142,8 +1137,7 @@ def main():
                 papers=papers,
                 config=config,
                 target_date=target_date,
-                is_hot_paper_batch=False,
-                bio_boost=bio_enabled
+                is_hot_paper_batch=False
             )
             logger.info("Scored %d %s papers", len(scored_extra), name)
             all_scored_papers.extend(scored_extra)
