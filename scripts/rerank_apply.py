@@ -19,9 +19,12 @@ def select(candidates, verdicts, top_n):
     """Final paper list from a ranked candidate pool + verdicts.
 
     candidates: paper dicts, ranked best-first, each with an 'id'.
-    verdicts:   {paper_id: "ON"|"BORDERLINE"|"OFF"} (case-insensitive). A
-                candidate with no verdict is BORDERLINE (eligible for backfill,
-                never prioritized); unknown ids are ignored. OFF is dropped.
+    verdicts:   {paper_id: "ON"|"BORDERLINE"|"OFF"} — scalar strings, accepted
+                case-insensitively. (`main()` normalizes dict-form
+                `{"verdict": ...}` and validates via `_normalize_verdicts`
+                before calling this.) A candidate with no verdict is BORDERLINE
+                (eligible for backfill, never prioritized); unknown ids are
+                ignored. OFF is dropped.
     top_n:      max papers to return (returns fewer if the pool is thin).
     """
     def verdict_of(paper):

@@ -284,7 +284,7 @@ keyword score provides recall, and you (the agent) provide precision by judging
 each candidate against the user's `research_brief`.
 
 1. Read `research_brief` from the config and the `candidates` array from
-   `arxiv_filtered.json` (each candidate has `id`, `title`, `abstract`,
+   `arxiv_filtered.json` (each candidate has `id`, `title`, `abstract`/`summary`,
    `matched_domain`).
 2. For EVERY candidate, decide its relevance to the brief:
    - `ON` — directly about the brief's topics, methods, or questions.
@@ -315,8 +315,9 @@ for a human-reviewed recommender.
 
 # Step 3 — Materialize weekly knowledge notes
 
-Run this immediately after the Step 2 sanity guard. It creates the durable
-knowledge surface that future agents should read first:
+Run this after the Step 2.7 rerank (or, when no agent runs the rerank, after the
+Step 2 sanity guard). It creates the durable knowledge surface that future
+agents should read first:
 
 - Obsidian mode:
   - `$OBSIDIAN_VAULT_PATH/10_Daily/YYYY-MM-DD-paper-recommendations.md`
