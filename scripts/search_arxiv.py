@@ -62,15 +62,28 @@ except ImportError as e:
     logger.warning("Bio source modules (search_pubmed, search_biorxiv) "
                    "not found — skipping (%s)", e)
 
-# OpenAlex: optional cross-disciplinary source (any field). Enabled when an
-# OPENALEX_API_KEY is available; the module itself skips cleanly without one.
-try:
-    from search_openalex import search_openalex
-    HAS_OPENALEX = True
-except ImportError as e:
-    HAS_OPENALEX = False
-    logger.warning("OpenAlex source module (search_openalex) "
-                   "not found — skipping (%s)", e)
+# Optional cross-disciplinary sources beyond arXiv + Semantic Scholar. Each is
+# a self-contained module imported best-effort (a missing file just drops that
+# source). key_env=None means keyless — runs by default; otherwise the source
+# runs under "auto" only when that env var holds a key. Adding a source is one
+# _register_extra_source() line plus the module.
+_EXTRA_SOURCES = []  # list of {name, fn, cfg_key, key_env}
+
+
+def _register_extra_source(name, module_name, fn_name, cfg_key, key_env):
+    try:
+        mod = __import__(module_name)
+        _EXTRA_SOURCES.append({
+            "name": name, "fn": getattr(mod, fn_name),
+            "cfg_key": cfg_key, "key_env": key_env,
+        })
+    except ImportError as e:
+        logger.warning("Optional source %s unavailable — skipping (%s)", name, e)
+
+
+_register_extra_source("OpenAlex", "search_openalex", "search_openalex", "openalex", "OPENALEX_API_KEY")
+_register_extra_source("Crossref", "search_crossref", "search_crossref", "crossref", None)
+_register_extra_source("CORE", "search_core", "search_core", "core", "CORE_API_KEY")
 
 # ---------------------------------------------------------------------------
 # API configuration
@@ -731,6 +744,29 @@ def _bio_sources_enabled(config: Dict) -> bool:
     return False
 
 
+def _extra_source_enabled(spec: Dict, config: Dict) -> bool:
+    """Decide whether an optional source (OpenAlex/Crossref/CORE) runs.
+
+    Its config value may be a bool/"true"/"false", or a dict with an `enabled`
+    key holding the same. "auto" (the default): keyless sources always run;
+    keyed sources run only when their key_env resolves to a non-empty value.
+    """
+    raw = config.get(spec["cfg_key"], "auto")
+    setting = raw.get("enabled", "auto") if isinstance(raw, dict) else raw
+    if setting is True or setting == "true":
+        return True
+    if setting is False or setting == "false":
+        return False
+    if spec["key_env"] is None:
+        return True  # keyless source — on by default under "auto"
+    try:
+        from _env_resolve import load_env_from_user_shell as _lenv
+        _lenv((spec["key_env"],))
+    except Exception:
+        pass
+    return bool(os.environ.get(spec["key_env"], "").strip())
+
+
 def filter_and_score_papers(
     papers: List[Dict],
     config: Dict,
@@ -1075,54 +1111,42 @@ def main():
         logger.info("Bio sources not available — install search_pubmed.py "
                     "and search_biorxiv.py to enable")
 
-    # ========== Step 2.6: OpenAlex (cross-disciplinary, any field) ==========
-    openalex_papers = []
-    openalex_status = "disabled"
-    _oa_cfg = config.get("openalex") or {}
-    _oa_setting = _oa_cfg.get("enabled", "auto")
-    if _oa_setting is True or _oa_setting == "true":
-        _oa_enabled = True
-    elif _oa_setting is False or _oa_setting == "false":
-        _oa_enabled = False
-    else:  # "auto" — enable iff a key is resolvable
-        try:
-            from _env_resolve import load_env_from_user_shell as _lenv
-            _lenv(("OPENALEX_API_KEY",))
-        except Exception:
-            pass
-        _oa_enabled = bool(os.environ.get("OPENALEX_API_KEY", "").strip())
-
-    if HAS_OPENALEX and _oa_enabled:
+    # ========== Step 2.6: Extra cross-disciplinary sources ==========
+    # OpenAlex, Crossref, CORE — each gated by config + key availability via
+    # the _EXTRA_SOURCES registry. A source that errors mid-run drops to [] and
+    # records its status; the rest of the pipeline is unaffected.
+    extra_counts = {}
+    extra_status = {}
+    for spec in _EXTRA_SOURCES:
+        name = spec["name"]
+        if not _extra_source_enabled(spec, config):
+            extra_counts[name] = 0
+            extra_status[name] = "disabled"
+            logger.info("%s disabled for this config — skipping", name)
+            continue
         logger.info("=" * 70)
-        logger.info("Step 2.6: Searching OpenAlex (cross-disciplinary)")
+        logger.info("Step 2.6: Searching %s (cross-disciplinary)", name)
         logger.info("=" * 70)
         try:
-            openalex_papers = search_openalex(
-                config, days=args.days, target_date=target_date)
-            logger.info("[OpenAlex] Found %d papers", len(openalex_papers))
-            # search_openalex returns [] (not an error) when no key is set.
-            openalex_status = "ok" if openalex_papers or os.environ.get(
-                "OPENALEX_API_KEY", "").strip() else "no_key"
+            papers = spec["fn"](config, days=args.days, target_date=target_date)
+            extra_counts[name] = len(papers)
+            extra_status[name] = "ok"
+            logger.info("[%s] Found %d papers", name, len(papers))
         except Exception as e:
-            openalex_status = f"api_error:{e}"
-            logger.error("[OpenAlex] failed: %s", e)
-
-        if openalex_papers:
-            scored_oa = filter_and_score_papers(
-                papers=openalex_papers,
+            papers = []
+            extra_counts[name] = 0
+            extra_status[name] = f"api_error:{e}"
+            logger.error("[%s] failed: %s", name, e)
+        if papers:
+            scored_extra = filter_and_score_papers(
+                papers=papers,
                 config=config,
                 target_date=target_date,
                 is_hot_paper_batch=False,
                 bio_boost=bio_enabled
             )
-            logger.info("Scored %d OpenAlex papers", len(scored_oa))
-            all_scored_papers.extend(scored_oa)
-    elif not HAS_OPENALEX:
-        logger.info("OpenAlex module not available — skipping")
-    else:
-        logger.info("OpenAlex disabled for this config "
-                    "(openalex.enabled=false, or 'auto' found no "
-                    "OPENALEX_API_KEY) — skipping")
+            logger.info("Scored %d %s papers", len(scored_extra), name)
+            all_scored_papers.extend(scored_extra)
 
     # ========== Step 3: Merge and rank results ==========
     logger.info("=" * 70)
@@ -1185,8 +1209,13 @@ def main():
         'total_hot': len(hot_papers),
         'total_bio': len(bio_papers),
         'bio_status': bio_status,  # "ok" | "disabled" | "import_failed:..." | "api_error:..."
-        'total_openalex': len(openalex_papers),
-        'openalex_status': openalex_status,  # "ok" | "disabled" | "no_key" | "api_error:..."
+        # Per-source results for the optional cross-disciplinary sources, e.g.
+        # {"OpenAlex": {"count": 12, "status": "ok"}, "Crossref": {...}, ...}
+        'extra_sources': {
+            name: {'count': extra_counts.get(name, 0),
+                   'status': extra_status.get(name, 'disabled')}
+            for name in (s['name'] for s in _EXTRA_SOURCES)
+        },
         'total_unique': len(unique_papers),
         'top_papers': top_papers
     }

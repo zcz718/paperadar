@@ -2,9 +2,9 @@
 
 A weekly radar for the papers that matter to *you*. Point it at your research
 interests and it sweeps the past week across arXiv, Semantic Scholar, OpenAlex,
-and (if you want them) bioRxiv, medRxiv, and PubMed, scores everything against
-your topics, and hands you a ranked note — written into your Obsidian vault or
-as plain Markdown in any folder.
+and Crossref — plus CORE and the biomedical servers (bioRxiv, medRxiv, PubMed)
+when you want them — scores everything against your topics, and hands you a
+ranked note, written into your Obsidian vault or as plain Markdown in any folder.
 
 It runs as a [Claude Code](https://www.anthropic.com/claude-code) / Codex skill,
 so you can just say *"run my weekly papers"* and read the results, or drive the
@@ -116,12 +116,18 @@ every discipline):
 
 | Setting | Source | Behaviour |
 |---|---|---|
-| `bio_sources: auto` | bioRxiv, medRxiv, PubMed | Runs only when your interests look biomedical (a `q-bio.*` category or a bio keyword). Set `true`/`false` to force. |
+| `crossref.enabled: auto` | Crossref (~180M DOIs, all fields) | On by default — no key needed. Catches freshly-registered papers across every field, often before aggregators index them. |
 | `openalex.enabled: auto` | OpenAlex (~270M works, all fields) | Runs when `OPENALEX_API_KEY` is set. A key is [free](https://openalex.org) and takes under a minute; without one this source is skipped silently. |
+| `core.enabled: auto` | CORE (~400M OA works) | Open-access repositories — theses, working papers, deposits. Runs when `CORE_API_KEY` is set ([free](https://core.ac.uk/services/api)); skipped otherwise. |
+| `bio_sources: auto` | bioRxiv, medRxiv, PubMed | Runs only when your interests look biomedical (a `q-bio.*` category or a bio keyword). Set `true`/`false` to force. |
+
+Every source returns results in one schema and gets re-scored against your
+config, so adding a source widens coverage without changing how ranking works.
 
 **Journal filter.** `prioritize_journals` restricts PubMed and Semantic Scholar
-to a list of venues (journals or conferences). Preprints and OpenAlex are never
-filtered, so nothing cutting-edge gets dropped. Leave it empty to disable.
+to a list of venues (journals or conferences). Preprints, OpenAlex, Crossref,
+and CORE are never filtered, so nothing cutting-edge gets dropped. Leave it
+empty to disable.
 
 ### Environment variables
 
@@ -130,6 +136,8 @@ filtered, so nothing cutting-edge gets dropped. Leave it empty to disable.
 | `OBSIDIAN_VAULT_PATH` | Obsidian mode | Root of your vault |
 | `OPENALEX_API_KEY` | OpenAlex source | Free; unset = source skipped |
 | `OPENALEX_EMAIL` | OpenAlex (optional) | Joins the faster "polite pool" |
+| `CORE_API_KEY` | CORE source | Free; unset = source skipped |
+| `CROSSREF_EMAIL` | Crossref (optional) | Polite pool; falls back to `UNPAYWALL_EMAIL` |
 | `NCBI_API_KEY` | PubMed (optional) | Raises the rate limit 3→10 req/s |
 | `ZOTERO_API_KEY`, `ZOTERO_USER_ID` | Zotero sync | `ZOTERO_USER_ID` is the numeric ID |
 | `UNPAYWALL_EMAIL` | Unpaywall PDF fetch | Their ToS requires a contact email |
@@ -150,6 +158,8 @@ paperadar/
 │   ├── init_config.py        # first-run setup wizard
 │   ├── search_arxiv.py       # orchestrator (arXiv + S2 + dispatch)
 │   ├── search_openalex.py    # OpenAlex (cross-disciplinary)
+│   ├── search_crossref.py    # Crossref (DOI registry, any field)
+│   ├── search_core.py        # CORE (open-access repositories)
 │   ├── search_biorxiv.py     # bioRxiv / medRxiv
 │   ├── search_pubmed.py      # PubMed via E-utilities
 │   ├── materialize_weekly_notes.py  # weekly index + paper scaffolds

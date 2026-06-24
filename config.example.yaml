@@ -75,6 +75,28 @@ openalex:
   enabled: "auto"
   max_results: 100
 
+# Crossref (https://www.crossref.org) — the DOI registry of record, ~180M works
+# across every field. No API key needed, and it catches freshly-registered
+# papers fast, often before aggregators index them. Abstracts are present for a
+# subset of records.
+#   enabled: "auto"  — on by default (no key required).
+#            false    — turn it off.
+# Optional: export CROSSREF_EMAIL="you@example.org" for the faster polite pool
+# (paperadar also reuses UNPAYWALL_EMAIL if that is already set).
+crossref:
+  enabled: "auto"
+  max_results: 100
+
+# CORE (https://core.ac.uk) — ~400M open-access works harvested from
+# institutional and subject repositories (theses, working papers, deposits),
+# with full-text abstracts and PDF links. Needs a free API key.
+#   enabled: "auto"  — turn on only when CORE_API_KEY is set in your env.
+#            false    — never query CORE.
+#   export CORE_API_KEY="..."   # get one at https://core.ac.uk/services/api
+core:
+  enabled: "auto"
+  max_results: 100
+
 # ─────────────────────────────────────────────────────────────────────────
 # Top-tier journal filter
 # ─────────────────────────────────────────────────────────────────────────

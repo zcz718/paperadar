@@ -1,6 +1,6 @@
 ---
 name: paperadar
-description: Weekly research-paper recommendations for any field — searches arXiv, Semantic Scholar, OpenAlex (cross-disciplinary), and optionally bioRxiv/medRxiv/PubMed, scores them against your research interests, and writes a ranked weekly note. Supports Obsidian (wikilinks, vault) and standalone plain-Markdown modes.
+description: Weekly research-paper recommendations for any field — searches arXiv, Semantic Scholar, OpenAlex, Crossref (cross-disciplinary), and optionally CORE and bioRxiv/medRxiv/PubMed, scores them against your research interests, and writes a ranked weekly note. Supports Obsidian (wikilinks, vault) and standalone plain-Markdown modes.
 ---
 
 # First run — capture the user's research focus
@@ -214,15 +214,20 @@ cd "$SKILL_DIR"
 
 This always runs arXiv + Semantic Scholar (both span every field). It *also*
 runs, conditionally:
-- **bioRxiv + medRxiv + PubMed** — when `bio_sources` is `true`, or `"auto"`
-  and the config looks biomedical (a `q-bio.*` category or a bio keyword).
+- **Crossref** — on by default (no key); the DOI registry, every field. Set
+  `crossref.enabled: false` to turn it off.
 - **OpenAlex** — when `openalex.enabled` is `true`, or `"auto"` and an
   `OPENALEX_API_KEY` is set. Skips cleanly otherwise.
+- **CORE** — when `core.enabled` is `true`, or `"auto"` and a `CORE_API_KEY`
+  is set (open-access repositories). Skips cleanly otherwise.
+- **bioRxiv + medRxiv + PubMed** — when `bio_sources` is `true`, or `"auto"`
+  and the config looks biomedical (a `q-bio.*` category or a bio keyword).
 
 Output: `arxiv_filtered.json` with a `top_papers` array (each paper has
 `id, title, authors, abstract, url, published_date, source, note_filename,
-scores, matched_domain, journal`) plus `bio_status` and `openalex_status`
-fields reporting whether those optional sources ran.
+scores, matched_domain, journal`) plus `bio_status` and an `extra_sources`
+map (`{"OpenAlex": {"count", "status"}, "Crossref": {...}, "CORE": {...}}`)
+reporting whether each optional source ran.
 
 **Journal filtering:** If `prioritize_journals` is set in the config, PubMed
 and Semantic Scholar results are restricted to those venues. arXiv, bioRxiv,

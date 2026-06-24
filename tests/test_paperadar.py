@@ -198,3 +198,35 @@ def test_bio_sources_explicit_true_overrides_auto():
 def test_bio_sources_explicit_false_overrides_auto():
     config = {"bio_sources": False, "research_domains": {"G": {"keywords": ["genome"], "arxiv_categories": ["q-bio.GN"]}}}
     assert search_arxiv._bio_sources_enabled(config) is False
+
+
+# ---------------------------------------------------------------------------
+# Extra-source registry gating (OpenAlex / Crossref / CORE)
+# ---------------------------------------------------------------------------
+
+def test_extra_source_keyless_enabled_under_auto():
+    spec = {"name": "Crossref", "cfg_key": "crossref", "key_env": None}
+    assert search_arxiv._extra_source_enabled(spec, {}) is True  # keyless → on
+
+
+def test_extra_source_keyed_auto_disabled_without_key(monkeypatch):
+    monkeypatch.delenv("CORE_API_KEY", raising=False)
+    spec = {"name": "CORE", "cfg_key": "core", "key_env": "CORE_API_KEY"}
+    import unittest.mock as m
+    with m.patch("search_arxiv.os.environ.get", return_value=""):
+        assert search_arxiv._extra_source_enabled(spec, {}) is False
+
+
+def test_extra_source_explicit_false_dict_form():
+    spec = {"name": "Crossref", "cfg_key": "crossref", "key_env": None}
+    assert search_arxiv._extra_source_enabled(spec, {"crossref": {"enabled": False}}) is False
+
+
+def test_extra_source_explicit_true_scalar_form():
+    spec = {"name": "CORE", "cfg_key": "core", "key_env": "CORE_API_KEY"}
+    assert search_arxiv._extra_source_enabled(spec, {"core": True}) is True
+
+
+def test_registry_has_three_sources():
+    names = [s["name"] for s in search_arxiv._EXTRA_SOURCES]
+    assert names == ["OpenAlex", "Crossref", "CORE"]
