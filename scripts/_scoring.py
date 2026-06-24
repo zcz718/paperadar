@@ -54,18 +54,21 @@ RECENCY_THRESHOLDS = [
 ]
 RECENCY_DEFAULT = 0.0
 
-# Combined recommendation score weights (typical papers)
+# Combined recommendation score weights (typical papers).
+# Relevance raised 0.40->0.50 (recency 0.20->0.15, popularity 0.30->0.25) after the
+# cross-field QC found low-relevance papers floating into the top-N on freshness alone.
 WEIGHTS_NORMAL = {
-    'relevance': 0.40,
-    'recency': 0.20,
-    'popularity': 0.30,
+    'relevance': 0.50,
+    'recency': 0.15,
+    'popularity': 0.25,
     'quality': 0.10,
 }
-# Combined recommendation score weights (high-impact papers: more popularity, less recency)
+# High-impact papers: popularity-led, but relevance also raised 0.35->0.45 so a
+# heavily-cited but off-topic paper can't dominate on citations alone.
 WEIGHTS_HOT = {
-    'relevance': 0.35,
+    'relevance': 0.45,
     'recency': 0.10,
-    'popularity': 0.45,
+    'popularity': 0.35,
     'quality': 0.10,
 }
 

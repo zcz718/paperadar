@@ -153,6 +153,11 @@ fi
 # arxiv_categories). This is what makes paperadar field-agnostic — a CS user
 # gets cs.* fetched, a physicist gets physics.*, etc. Falls back to a broad
 # cross-disciplinary default when the config is empty/missing.
+#
+# NOTE: search_arxiv.py now performs this same derivation internally when
+# --categories is omitted (so a direct, non-SKILL invocation is also
+# field-agnostic). Passing --categories below is still honoured and kept for
+# explicitness; the bash derivation here is back-compat and can be removed.
 _FALLBACK_CATS="cs.AI,cs.LG,cs.CL,cs.CV,cs.NE,stat.ML,math.ST,physics.comp-ph,econ.GN,q-bio.QM"
 ARXIV_CATS=""
 if [ -n "$CONFIG_PATH" ]; then

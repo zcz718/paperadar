@@ -70,12 +70,12 @@ except ImportError as e:
 _EXTRA_SOURCES = []  # list of {name, fn, cfg_key, key_env}
 
 
-def _register_extra_source(name, module_name, fn_name, cfg_key, key_env):
+def _register_extra_source(name, module_name, fn_name, cfg_key, key_env, default="auto"):
     try:
         mod = __import__(module_name)
         _EXTRA_SOURCES.append({
             "name": name, "fn": getattr(mod, fn_name),
-            "cfg_key": cfg_key, "key_env": key_env,
+            "cfg_key": cfg_key, "key_env": key_env, "default": default,
         })
     except ImportError as e:
         logger.warning("Optional source %s unavailable — skipping (%s)", name, e)
@@ -83,7 +83,10 @@ def _register_extra_source(name, module_name, fn_name, cfg_key, key_env):
 
 _register_extra_source("OpenAlex", "search_openalex", "search_openalex", "openalex", "OPENALEX_API_KEY")
 _register_extra_source("Crossref", "search_crossref", "search_crossref", "crossref", None)
-_register_extra_source("CORE", "search_core", "search_core", "core", "CORE_API_KEY")
+# CORE is opt-in (default off). The QC found CORE returns recently-*indexed* but not
+# recently-*published* works, so it contributed nothing to a weekly top-N while adding
+# fetch latency. Enable explicitly with `core: { enabled: true }`.
+_register_extra_source("CORE", "search_core", "search_core", "core", "CORE_API_KEY", default="false")
 
 # ---------------------------------------------------------------------------
 # API configuration
@@ -706,16 +709,66 @@ def parse_arxiv_xml(xml_content: str) -> List[Dict]:
 # backward compatibility with existing tests and call sites.
 
 
+# Substrings that mark a research domain as biomedical (for bio_sources "auto").
+_BIOMED_KEYWORD_MARKERS = (
+    "biolog", "genom", "transcript", "rna", "dna", "protein", "gene", "cell",
+    "clinical", "medical", "disease", "patient", "epigen", "chromatin",
+    "methylation", "single-cell", "biomed", "neuro", "cancer", "immun",
+    "microb", "drug", "molecul", "pathogen", "virus", "antibod",
+)
+
+
 def _bio_sources_enabled(config: Dict) -> bool:
     """Whether the biomedical sources (bioRxiv/medRxiv/PubMed) are searched.
 
-    paperadar searches every accessible source by default — what surfaces a
-    paper is keyword relevance, NOT the source's topic. A biophysics result in
-    PubMed should reach a physicist, so these run unless the user explicitly
-    turns them off with `bio_sources: false`. ("auto" and true both mean on.)
+    Explicit `bio_sources: true`/`false` always wins. Otherwise ("auto", or any
+    unrecognised/absent value) the sources run ONLY when the config shows a
+    biomedical signal — a `q-bio.*` arXiv category or a biomedical keyword. This
+    fixes the QC finding that PubMed injected clinical-nutrition noise into a
+    non-biomedical (humanitarian) persona, and that unknown values like
+    "garbage" silently turned the sources on. A non-bio researcher who still
+    wants PubMed can set `bio_sources: true`.
     """
-    setting = config.get("bio_sources", True)
-    return not (setting is False or setting == "false")
+    setting = config.get("bio_sources", "auto")
+    if setting is True or setting == "true":
+        return True
+    if setting is False or setting == "false":
+        return False
+    for dom in (config.get("research_domains") or {}).values():
+        for cat in (dom.get("arxiv_categories") or []):
+            if str(cat).startswith("q-bio."):
+                return True
+        for kw in (dom.get("keywords") or []):
+            kw_l = str(kw).lower()
+            if any(marker in kw_l for marker in _BIOMED_KEYWORD_MARKERS):
+                return True
+    return False
+
+
+# Broad cross-disciplinary arXiv categories, used only when neither --categories
+# nor the config's research_domains supply any (keeps a bare run non-empty).
+_FALLBACK_ARXIV_CATEGORIES = [
+    "cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.NE", "stat.ML", "math.ST",
+    "physics.comp-ph", "econ.GN", "q-bio.QM",
+]
+
+
+def _derive_arxiv_categories_from_config(config: Dict) -> List[str]:
+    """Union of every domain's `arxiv_categories`, order-preserving and deduped.
+
+    Makes the script field-agnostic on its own: previously this derivation lived
+    only in SKILL.md's bash, so a direct (non-SKILL) invocation without
+    --categories silently fell back to a CS-only default. Now `main()` calls this
+    when --categories is absent.
+    """
+    cats: List[str] = []
+    seen = set()
+    for dom in (config.get("research_domains") or {}).values():
+        for cat in (dom.get("arxiv_categories") or []):
+            if cat not in seen:
+                seen.add(cat)
+                cats.append(cat)
+    return cats
 
 
 def _priority_weight(domains: Dict, domain_name: Optional[str]) -> float:
@@ -745,7 +798,7 @@ def _extra_source_enabled(spec: Dict, config: Dict) -> bool:
     key holding the same. "auto" (the default): keyless sources always run;
     keyed sources run only when their key_env resolves to a non-empty value.
     """
-    raw = config.get(spec["cfg_key"], "auto")
+    raw = config.get(spec["cfg_key"], spec.get("default", "auto"))
     setting = raw.get("enabled", "auto") if isinstance(raw, dict) else raw
     if setting is True or setting == "true":
         return True
@@ -810,6 +863,7 @@ def _resolve_scoring(config: Dict) -> Dict:
 
     return {
         'min_relevance': _num('min_relevance', MIN_KEYWORD_ONLY_RELEVANCE),
+        'min_keyword_matches': max(1, int(_num('min_keyword_matches', 2))),
         'title_match': _num('title_match', RELEVANCE_TITLE_KEYWORD_BOOST),
         'abstract_match': _num('abstract_match', RELEVANCE_SUMMARY_KEYWORD_BOOST),
         'category_match': _num('category_match', RELEVANCE_CATEGORY_MATCH_BOOST),
@@ -873,6 +927,16 @@ def filter_and_score_papers(
         n_cat_matches = sum(1 for kw in matched_keywords if ARXIV_CATEGORY_PATTERN.match(kw))
         keyword_only_score = relevance - n_cat_matches * sc['category_match']
         if keyword_only_score < sc['min_relevance']:
+            continue
+
+        # Topical-signal gate (QC precision fix): one bare ambiguous word
+        # ("alignment", "simulation", "localization") false-matches across fields.
+        # Require EITHER >=min_keyword_matches distinct keyword hits, OR >=1 compound
+        # keyword (a space/hyphen/&// term like "transposable element", "single-cell",
+        # "ATAC-seq"), which is specific enough to stand alone.
+        kw_matches = [kw for kw in matched_keywords if not ARXIV_CATEGORY_PATTERN.match(kw)]
+        has_compound = any(any(c in kw for c in (' ', '-', '&', '/')) for kw in kw_matches)
+        if len(kw_matches) < sc['min_keyword_matches'] and not has_compound:
             continue
 
         # Compute recency
@@ -982,9 +1046,10 @@ def main():
                         help='Number of top papers to return')
     parser.add_argument('--target-date', type=str, default=None,
                         help='Target date (YYYY-MM-DD) for filtering')
-    parser.add_argument('--categories', type=str,
-                        default='cs.AI,cs.LG,cs.CL,cs.CV,cs.MM,cs.MA,cs.RO',
-                        help='Comma-separated list of arXiv categories')
+    parser.add_argument('--categories', type=str, default=None,
+                        help='Comma-separated arXiv categories. If omitted, derived '
+                             'from the config research_domains (union), then a broad '
+                             'cross-disciplinary fallback.')
     parser.add_argument('--skip-hot-papers', action='store_true',
                         help='Skip searching hot papers from Semantic Scholar')
     parser.add_argument('--days', type=int, default=7,
@@ -1024,8 +1089,15 @@ def main():
     logger.info("  Recent %d days: %s to %s", args.days, window_30d_start.date(), window_30d_end.date())
     logger.info("  Past year (before recent window): %s to %s", window_1y_start.date(), window_1y_end.date())
 
-    # Parse categories
-    categories = args.categories.split(',')
+    # Parse categories: explicit --categories wins; else derive from the config's
+    # research_domains (field-agnostic, no longer SKILL.md-only); else broad fallback.
+    if args.categories:
+        categories = [c.strip() for c in args.categories.split(',') if c.strip()]
+    else:
+        categories = _derive_arxiv_categories_from_config(config)
+        if not categories:
+            categories = list(_FALLBACK_ARXIV_CATEGORIES)
+        logger.info("Derived arXiv categories from config: %s", ",".join(categories))
 
     all_scored_papers = []
     recent_papers = []
