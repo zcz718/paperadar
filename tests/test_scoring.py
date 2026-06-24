@@ -1,8 +1,9 @@
 """Unit tests for the scoring core (`_scoring.py`) and the inclusion gate
 (`search_arxiv.filter_and_score_papers`), plus the precision fixes from the
-cross-field QC: a stronger gate (>=2 keyword matches OR >=1 compound keyword),
-re-weighted ranking, conservative bio-source auto-detection, in-script arXiv
-category derivation, and CORE demoted to opt-in.
+cross-field QC: a recall-first gate (>=1 keyword by default, >=2 opt-in via
+scoring.min_keyword_matches, OR >=1 compound keyword), re-weighted ranking,
+conservative bio-source auto-detection, in-script arXiv category derivation,
+and CORE demoted to opt-in.
 """
 from __future__ import annotations
 
