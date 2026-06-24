@@ -213,10 +213,10 @@ cd "$SKILL_DIR"
 ```
 
 Every accessible source is searched — what surfaces a paper is keyword
-relevance, not the source's topic. Users narrow results with
-`search_sensitivity` (`broad` / `balanced` / `strict`, or a number), which sets
-the minimum keyword match a paper needs; they do **not** narrow by switching
-sources off by tier.
+relevance, not the source's topic. A paper must clear the keyword-relevance
+gate (`MIN_KEYWORD_ONLY_RELEVANCE`, ≈ one title-keyword match) to be included;
+to make a topic rank higher or lower, the user sets its `priority` (1–5) under
+`research_domains` — not by switching sources off by tier.
 
 Always runs arXiv + Semantic Scholar (both span every field), plus:
 - **Crossref** — on by default (no key); the DOI registry, every field. Set

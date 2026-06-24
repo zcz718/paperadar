@@ -51,19 +51,12 @@ output:
 # (Keys are NOT stored in this YAML; use environment variables.)
 
 # ─────────────────────────────────────────────────────────────────────────
-# Sources & sensitivity
+# Sources
 # ─────────────────────────────────────────────────────────────────────────
 # Philosophy: every accessible source is searched, and what surfaces a paper is
 # keyword relevance — NOT which site it came from. So a biophysics paper in
-# PubMed can still reach a physicist. You narrow results with `search_sensitivity`
-# (below), not by switching sources off.
-
-# How strong a keyword match a paper needs to survive filtering:
-#   "broad"     — widest net; a single abstract keyword match is enough.
-#   "balanced"  — default; needs a title keyword match (or two abstract matches).
-#   "strict"    — only strong matches survive.
-# A bare number (e.g. 0.7) sets the threshold directly.
-search_sensitivity: "balanced"
+# PubMed can still reach a physicist. To make a topic matter more (or less),
+# set its `priority` under research_domains below — not by switching sources off.
 
 # Biomedical sources (bioRxiv, medRxiv, PubMed). Searched by default — set this
 # to false only if you never want biomedical results (e.g. to keep runs lean).
@@ -132,9 +125,11 @@ prioritize_journals:
 # Research domains
 # ─────────────────────────────────────────────────────────────────────────
 # EXAMPLE domains showing the structure — replace with your own. Domain names
-# are arbitrary labels; `priority` (1–5) weights the score. `arxiv_categories`
-# both controls which arXiv papers are fetched (paperadar uses the union of all
-# categories below) and adds a relevance boost when a paper matches.
+# are arbitrary labels. `priority` (1–5, where 3 is neutral) weights how a
+# matched paper RANKS: a priority-5 topic's matches rise to the top, a
+# priority-1 topic's sink — it does not exclude anything, it reorders.
+# `arxiv_categories` both controls which arXiv papers are fetched (paperadar
+# uses the union of all categories below) and adds a relevance boost on a match.
 research_domains:
 
   "AI & Machine Learning":

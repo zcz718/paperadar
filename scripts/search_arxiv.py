@@ -718,34 +718,24 @@ def _bio_sources_enabled(config: Dict) -> bool:
     return not (setting is False or setting == "false")
 
 
-# Search sensitivity is the real gate: how strong a keyword match a paper needs
-# to survive filtering. This — not the choice of source — is what narrows the
-# results. Named levels map to a minimum keyword-only relevance score; a bare
-# number sets the threshold directly.
-_SENSITIVITY_LEVELS = {"broad": 0.3, "balanced": 0.5, "strict": 0.8}
+def _priority_weight(domains: Dict, domain_name: Optional[str]) -> float:
+    """Per-domain `priority` (1–5) as a relevance multiplier for ranking.
 
-
-def _resolve_min_relevance(config: Dict) -> float:
-    """Resolve the keyword-relevance threshold from `search_sensitivity`.
-
-    "broad" casts the widest net (a single abstract keyword match passes),
-    "balanced" (default) needs a title match, "strict" wants a strong match.
-    A numeric value overrides the threshold directly.
+    priority 3 is neutral (×1.0); 5 → ×1.67, 1 → ×0.33. This is the
+    `priority: 1–5` the config has always documented ("weights the score") but
+    never actually applied: it weights how a paper RANKS (its recommendation
+    score), so a higher-priority topic's matches rise to the top. It does NOT
+    change which papers clear the keyword-relevance gate.
     """
-    s = config.get("search_sensitivity", "balanced")
-    if isinstance(s, bool):  # bool is an int subclass — ignore it
-        return MIN_KEYWORD_ONLY_RELEVANCE
-    if isinstance(s, (int, float)):
-        return float(s)
-    if isinstance(s, str):
-        key = s.strip().lower()
-        if key in _SENSITIVITY_LEVELS:
-            return _SENSITIVITY_LEVELS[key]
-        try:
-            return float(key)
-        except ValueError:
-            pass
-    return MIN_KEYWORD_ONLY_RELEVANCE
+    if not domain_name:
+        return 1.0
+    raw = (domains.get(domain_name) or {}).get("priority", 3)
+    try:
+        p = float(raw)
+    except (TypeError, ValueError):
+        p = 3.0
+    p = max(1.0, min(5.0, p))
+    return p / 3.0
 
 
 def _extra_source_enabled(spec: Dict, config: Dict) -> bool:
@@ -791,7 +781,6 @@ def filter_and_score_papers(
     """
     domains = config.get('research_domains', {})
     excluded_keywords = config.get('excluded_keywords', [])
-    min_relevance = _resolve_min_relevance(config)
 
     scored_papers = []
 
@@ -822,7 +811,7 @@ def filter_and_score_papers(
         # abstract word from being included.
         n_cat_matches = sum(1 for kw in matched_keywords if ARXIV_CATEGORY_PATTERN.match(kw))
         keyword_only_score = relevance - n_cat_matches * RELEVANCE_CATEGORY_MATCH_BOOST
-        if keyword_only_score < min_relevance:
+        if keyword_only_score < MIN_KEYWORD_ONLY_RELEVANCE:
             continue
 
         # Compute recency
@@ -873,9 +862,12 @@ def filter_and_score_papers(
         summary = paper.get('summary', '') if 'summary' in paper else paper.get('abstract', '')
         quality = calculate_quality_score(summary)
 
-        # Compute combined recommendation score
+        # Compute combined recommendation score. Per-domain `priority` weights
+        # how a paper RANKS (not whether it passed the gate above): a higher-
+        # priority topic's matches get a higher recommendation score.
+        weighted_relevance = relevance * _priority_weight(domains, matched_domain)
         recommendation_score = calculate_recommendation_score(
-            relevance, recency, popularity, quality, is_hot_paper_batch
+            weighted_relevance, recency, popularity, quality, is_hot_paper_batch
         )
 
         # Attach scoring info to the paper dict

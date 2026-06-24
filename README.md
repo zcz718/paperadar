@@ -109,13 +109,15 @@ writes plain Markdown into a folder of your choice — no vault required.
 **Research domains.** Named groups of `keywords`, `arxiv_categories`, and a
 `priority` (1–5). The union of all your `arxiv_categories` decides which arXiv
 papers get fetched, so adding `physics.comp-ph` or `econ.GN` is all it takes to
-follow a new field.
+follow a new field. `priority` (3 is neutral) weights how a topic's matches
+rank — a priority-5 topic rises to the top, a priority-1 topic sinks — without
+ever excluding a relevant paper.
 
-**Sensitivity, not source tiers.** Every accessible source is searched, and a
+**Relevance, not source tiers.** Every accessible source is searched, and a
 paper surfaces on keyword relevance — not on which site it came from (a
-biophysics paper in PubMed still reaches a physicist). You tune how much
-surfaces with `search_sensitivity`: `broad` (a single abstract match passes),
-`balanced` (the default — needs a title match), `strict`, or a bare number.
+biophysics paper in PubMed still reaches a physicist). What it takes to be
+included is a real keyword match (about one title hit); what it takes to rank
+near the top is that match landing in a high-`priority` topic.
 
 **Sources beyond arXiv + Semantic Scholar** (both always run and both span
 every discipline):

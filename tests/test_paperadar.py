@@ -199,27 +199,39 @@ def test_bio_sources_explicit_true_enables():
 
 
 # ---------------------------------------------------------------------------
-# Search sensitivity is the relevance gate (not the source tier)
+# Per-domain priority weights ranking (the documented `priority: 1–5`)
 # ---------------------------------------------------------------------------
 
-def test_sensitivity_default_is_balanced():
-    assert search_arxiv._resolve_min_relevance({}) == 0.5
+def test_priority_weight_is_neutral_at_three():
+    domains = {"D": {"priority": 3}}
+    assert search_arxiv._priority_weight(domains, "D") == 1.0
 
 
-def test_sensitivity_named_levels():
-    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "broad"}) == 0.3
-    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "balanced"}) == 0.5
-    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "strict"}) == 0.8
+def test_priority_weight_scales_with_priority():
+    domains = {"hi": {"priority": 5}, "lo": {"priority": 1}}
+    assert search_arxiv._priority_weight(domains, "hi") > 1.0
+    assert search_arxiv._priority_weight(domains, "lo") < 1.0
+    # Higher priority always weights more than lower.
+    assert search_arxiv._priority_weight(domains, "hi") > search_arxiv._priority_weight(domains, "lo")
 
 
-def test_sensitivity_numeric_override():
-    assert search_arxiv._resolve_min_relevance({"search_sensitivity": 0.7}) == 0.7
-    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "0.65"}) == 0.65
+def test_priority_weight_defaults_and_guards():
+    assert search_arxiv._priority_weight({}, None) == 1.0          # no domain
+    assert search_arxiv._priority_weight({"D": {}}, "D") == 1.0    # missing priority → neutral 3
+    assert search_arxiv._priority_weight({"D": {"priority": "x"}}, "D") == 1.0  # garbage → neutral
+    assert search_arxiv._priority_weight({"D": {"priority": 99}}, "D") == 5 / 3  # clamped to 5
 
 
-def test_sensitivity_garbage_falls_back_to_default():
-    assert search_arxiv._resolve_min_relevance({"search_sensitivity": "nonsense"}) == 0.5
-    assert search_arxiv._resolve_min_relevance({"search_sensitivity": True}) == 0.5
+def test_priority_actually_changes_ranking():
+    """A higher-priority domain ranks the same paper higher (the documented behavior)."""
+    paper = {"title": "deep learning advances", "summary": "deep learning study",
+             "published_date": datetime(2026, 6, 20)}
+    base = {"D": {"keywords": ["deep learning"], "arxiv_categories": [], "priority": 3}}
+    hi = {"D": {"keywords": ["deep learning"], "arxiv_categories": [], "priority": 5}}
+    target = datetime(2026, 6, 24)
+    s_base = search_arxiv.filter_and_score_papers([dict(paper)], {"research_domains": base}, target_date=target)
+    s_hi = search_arxiv.filter_and_score_papers([dict(paper)], {"research_domains": hi}, target_date=target)
+    assert s_hi[0]["scores"]["recommendation"] > s_base[0]["scores"]["recommendation"]
 
 
 # ---------------------------------------------------------------------------
