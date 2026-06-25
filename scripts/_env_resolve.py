@@ -102,6 +102,9 @@ def load_env_from_user_shell(
     """
     for var in var_names:
         if os.environ.get(var, "").strip():
+            # os.environ is itself the first (and authoritative) source — log it so
+            # the credential-origin audit trail is complete, not silently skipped.
+            logger.debug("%s already present in os.environ — using it", var)
             continue
         value = _read_launchctl_var(var)
         source = "launchctl"

@@ -58,11 +58,14 @@ output:
 # PubMed can still reach a physicist. To make a topic matter more (or less),
 # set its `priority` under research_domains below — not by switching sources off.
 
-# Biomedical sources (bioRxiv, medRxiv, PubMed). Searched by default — set this
-# to false only if you never want biomedical results (e.g. to keep runs lean).
-#   true (default) / "auto" — search them.
-#   false                   — skip them.
-bio_sources: true
+# Biomedical sources (bioRxiv, medRxiv, PubMed).
+#   true   — always search them.
+#   false  — never search them.
+#   "auto" (default) — search them only when this config shows a biomedical signal
+#            (a q-bio.* category or a biomedical keyword). This keeps clinical
+#            results out of non-biomedical fields. Non-bio researchers who still
+#            want PubMed coverage should set this to true.
+bio_sources: "auto"
 
 # OpenAlex (https://openalex.org) — ~270M works across ALL disciplines, with
 # open-access PDFs and topic tags. Needs a free API key (30-second signup).
@@ -94,8 +97,11 @@ crossref:
 #   enabled: "auto"  — turn on only when CORE_API_KEY is set in your env.
 #            false    — never query CORE.
 #   export CORE_API_KEY="..."   # get one at https://core.ac.uk/services/api
+# Opt-in (default off): CORE surfaces recently-*indexed* but not recently-
+# *published* works, so it rarely changes a weekly top-N while adding fetch
+# latency. Set enabled: "auto" or true (plus a key) if you want its OA coverage.
 core:
-  enabled: "auto"
+  enabled: false
   max_results: 100
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -108,18 +114,31 @@ core:
 # scoring:
 #   min_relevance: 0.5        # inclusion gate — keyword strength a paper needs
 #                             # to appear at all (lower = looser, more papers)
+#   min_keyword_matches: 2    # require >=2 distinct keyword hits OR >=1 compound
+#                             # keyword (e.g. "transposable element", "single-cell")
+#                             # to be included; blocks single ambiguous words like
+#                             # "alignment"/"simulation". Set 1 for the old behaviour.
 #   title_match: 0.5          # score for a keyword found in the title
 #   abstract_match: 0.3       # score for a keyword found only in the abstract
 #   category_match: 1.0       # score for an arXiv-category match
 #   weights:                  # final-ranking blend for ordinary papers
-#     relevance: 0.40         # (auto-normalized if they don't sum to 1)
-#     recency: 0.20
-#     popularity: 0.30
+#     relevance: 0.50         # (auto-normalized if they don't sum to 1)
+#     recency: 0.15
+#     popularity: 0.25
 #     quality: 0.10
 #   recency_thresholds:       # [days_since_publish, score] buckets
 #     - [30, 3.0]
 #     - [90, 2.0]
 #     - [180, 1.0]
+
+# ─────────────────────────────────────────────────────────────────────────
+# Relevance rerank (agent precision pass)
+# ─────────────────────────────────────────────────────────────────────────
+# search_arxiv.py emits a candidate pool (CLI: --pool-size, default 25). When an
+# agent runs the skill, SKILL.md Step 2.7 has it judge each candidate against
+# `research_brief` and keep the on-target ones (off-target are dropped). The
+# keyword gate is recall-first by default (scoring.min_keyword_matches: 1); set
+# it to 2 for a stricter deterministic filter on headless/no-agent runs.
 
 # ─────────────────────────────────────────────────────────────────────────
 # Top-tier journal filter
@@ -226,11 +245,14 @@ research_domains:
   #     - "q-bio.GN"
   #   priority: 3
 
-# Excluded keywords — papers whose title/abstract contain any of these are filtered out
+# Excluded keywords — papers whose title/abstract contain any of these are filtered
+# out (substring match). Default is just "workshop". "review"/"survey" are
+# STEM-centric and wrongly drop social-science work (a policy "review", a household
+# "survey"), so add them only if your field wants those gone:
+#   - "review"
+#   - "survey"
 excluded_keywords:
   - "workshop"
-  - "review"    # removes review articles; delete this line if you want reviews included
-  - "survey"    # removes survey papers; same note
 
 # Optional: extra words to skip during automatic wikilink keyword linking
 # extra_common_words:

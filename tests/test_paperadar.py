@@ -175,18 +175,23 @@ def test_config_with_research_brief_loads_unchanged(tmp_path):
     assert "ML" in loaded.get("research_domains", {})
 
 
-def test_bio_sources_on_by_default_even_for_non_bio_config():
-    # Every source is searched by default; topic does not gate the source.
+def test_bio_sources_off_for_non_bio_config_under_auto():
+    # QC P4 fix: under "auto", a clearly non-biomedical config no longer pulls
+    # PubMed/bioRxiv (it injected clinical noise into non-bio personas).
     config = {"research_domains": {"ML": {"keywords": ["deep learning"], "arxiv_categories": ["cs.LG"]}}}
-    assert search_arxiv._bio_sources_enabled(config) is True
+    assert search_arxiv._bio_sources_enabled(config) is False
 
 
-def test_bio_sources_on_when_key_missing_entirely():
-    assert search_arxiv._bio_sources_enabled({}) is True
+def test_bio_sources_off_when_no_signal():
+    assert search_arxiv._bio_sources_enabled({}) is False
 
 
-def test_bio_sources_auto_means_on():
-    assert search_arxiv._bio_sources_enabled({"bio_sources": "auto"}) is True
+def test_bio_sources_auto_needs_biomed_signal():
+    # bare "auto" with no biomedical domain -> off; a q-bio domain -> on.
+    assert search_arxiv._bio_sources_enabled({"bio_sources": "auto"}) is False
+    assert search_arxiv._bio_sources_enabled(
+        {"bio_sources": "auto",
+         "research_domains": {"D": {"arxiv_categories": ["q-bio.GN"], "keywords": []}}}) is True
 
 
 def test_bio_sources_explicit_false_disables():
