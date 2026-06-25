@@ -114,10 +114,11 @@ core:
 # scoring:
 #   min_relevance: 0.5        # inclusion gate — keyword strength a paper needs
 #                             # to appear at all (lower = looser, more papers)
-#   min_keyword_matches: 2    # require >=2 distinct keyword hits OR >=1 compound
-#                             # keyword (e.g. "transposable element", "single-cell")
-#                             # to be included; blocks single ambiguous words like
-#                             # "alignment"/"simulation". Set 1 for the old behaviour.
+#   min_keyword_matches: 1    # distinct keyword hits a paper needs. 1 (default) keeps
+#                             # recall wide and lets the agent rerank do precision; a
+#                             # compound keyword ("transposable element", "single-cell")
+#                             # always counts on its own. Set 2 for a stricter
+#                             # keyword-only cut (e.g. headless / no-agent runs).
 #   title_match: 0.5          # score for a keyword found in the title
 #   abstract_match: 0.3       # score for a keyword found only in the abstract
 #   category_match: 1.0       # score for an arXiv-category match
