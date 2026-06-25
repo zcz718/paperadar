@@ -3,18 +3,18 @@
 search_crossref.py — Query Crossref for recently-registered works (any field).
 
 Crossref is the DOI registry of record: ~180M works across every discipline,
-deposited by 20k+ publishers. Its value to paperadar is FRESHNESS — the
+deposited by 20k+ publishers. Its value to paperradar is FRESHNESS — the
 `from-index-date` filter catches papers the moment their metadata is registered,
 often before aggregators like OpenAlex have ingested them. No API key is needed;
 including a contact email (CROSSREF_EMAIL, or the existing UNPAYWALL_EMAIL) joins
 the faster "polite pool".
 
 Caveat: only a minority of Crossref records carry an abstract, and when present
-it is JATS-XML (stripped to plain text here). paperadar's scorer still matches
+it is JATS-XML (stripped to plain text here). paperradar's scorer still matches
 on the title, and drops anything that fails the relevance threshold, so sparse
 abstracts cost recall, not correctness.
 
-Returns the standard paperadar paper dict (see search_papers.filter_and_score_papers).
+Returns the standard paperradar paper dict (see search_papers.filter_and_score_papers).
 API docs: https://api.crossref.org/swagger-ui/index.html
 """
 
@@ -77,7 +77,7 @@ def _date_from_parts(item: dict) -> str:
 
 
 def _map_item(item: dict) -> Optional[dict]:
-    """Map one Crossref work item to the paperadar paper schema."""
+    """Map one Crossref work item to the paperradar paper schema."""
     title = " ".join(item.get("title") or []).strip()
     if not title:
         return None
@@ -171,7 +171,7 @@ def search_crossref(
 if __name__ == "__main__":  # pragma: no cover
     logging.basicConfig(level=logging.INFO)
     import argparse, yaml
-    p = argparse.ArgumentParser(description="Search Crossref (paperadar source)")
+    p = argparse.ArgumentParser(description="Search Crossref (paperradar source)")
     p.add_argument("--config", required=True)
     p.add_argument("--days", type=int, default=7)
     a = p.parse_args()

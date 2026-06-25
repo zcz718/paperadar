@@ -90,7 +90,7 @@ def _build_search_query(config: dict) -> str:
 
 
 def _map_work(work: dict) -> Optional[dict]:
-    """Map one OpenAlex Work object to the paperadar paper schema.
+    """Map one OpenAlex Work object to the paperradar paper schema.
 
     Returns None if the work has no usable title.
     """
@@ -231,7 +231,7 @@ def search_openalex(
 if __name__ == "__main__":  # pragma: no cover - manual smoke test
     logging.basicConfig(level=logging.INFO)
     import argparse
-    p = argparse.ArgumentParser(description="Search OpenAlex (paperadar source)")
+    p = argparse.ArgumentParser(description="Search OpenAlex (paperradar source)")
     p.add_argument("--config", required=True)
     p.add_argument("--days", type=int, default=7)
     args = p.parse_args()

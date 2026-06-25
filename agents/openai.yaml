@@ -1,4 +1,4 @@
 interface:
-  display_name: "Paperadar"
+  display_name: "PaperRadar"
   short_description: "Rank this week's papers in your field and track research interests"
-  default_prompt: "Use $paperadar to run weekly paper recommendations, inspect tracked keywords, or update research interests."
+  default_prompt: "Use $paperradar to run weekly paper recommendations, inspect tracked keywords, or update research interests."

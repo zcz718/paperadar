@@ -158,7 +158,7 @@ def test_scan_notes_directory_uses_vault_root_for_relative_paths(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# paperadar additions: research_brief passthrough + bio_sources gating
+# paperradar additions: research_brief passthrough + bio_sources gating
 # ---------------------------------------------------------------------------
 
 def test_config_with_research_brief_loads_unchanged(tmp_path):

@@ -134,7 +134,7 @@ def _resolve_standalone_dir(
 ) -> Path:
     raw = explicit_output_dir or str(
         (_config_output(config).get("standalone") or {}).get("output_dir")
-        or "~/paperadar-output"
+        or "~/paperradar-output"
     )
     return Path(raw).expanduser()
 
@@ -594,7 +594,7 @@ def materialize(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Materialize weekly paperadar Markdown notes."
+        description="Materialize weekly paperradar Markdown notes."
     )
     parser.add_argument("--input", default="arxiv_filtered.json")
     parser.add_argument("--config", default=None)

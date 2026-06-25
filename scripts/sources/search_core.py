@@ -4,7 +4,7 @@ search_core.py — Query CORE for recent open-access works (any field).
 
 CORE (https://core.ac.uk) aggregates ~400M+ open-access works harvested from
 thousands of institutional and subject repositories worldwide. Its value to
-paperadar is OA-repository and gray-literature coverage — theses, working
+paperradar is OA-repository and gray-literature coverage — theses, working
 papers, and repository deposits that the publisher-centric sources miss. CORE
 returns plain-text abstracts and direct PDF links.
 
@@ -12,7 +12,7 @@ Auth: CORE requires a free API key. Set CORE_API_KEY in your environment (or
 ~/.zshrc); register at https://core.ac.uk/services/api. Without a key this
 module logs once and returns [] — the rest of the pipeline is unaffected.
 
-Returns the standard paperadar paper dict (see search_papers.filter_and_score_papers).
+Returns the standard paperradar paper dict (see search_papers.filter_and_score_papers).
 API docs: https://api.core.ac.uk/docs/v3
 """
 
@@ -77,7 +77,7 @@ def _date_of(result: dict) -> str:
 
 
 def _map_result(result: dict) -> Optional[dict]:
-    """Map one CORE work to the paperadar paper schema."""
+    """Map one CORE work to the paperradar paper schema."""
     title = (result.get("title") or "").strip()
     if not title:
         return None
@@ -171,7 +171,7 @@ def search_core(
 if __name__ == "__main__":  # pragma: no cover
     logging.basicConfig(level=logging.INFO)
     import argparse, yaml
-    p = argparse.ArgumentParser(description="Search CORE (paperadar source)")
+    p = argparse.ArgumentParser(description="Search CORE (paperradar source)")
     p.add_argument("--config", required=True)
     p.add_argument("--days", type=int, default=7)
     a = p.parse_args()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared JSON-over-HTTP fetch helper for paperadar source adapters.
+"""Shared JSON-over-HTTP fetch helper for paperradar source adapters.
 
 Consolidates the near-identical retry / back-off / HTTP-429 logic that the
 OpenAlex, Crossref, and CORE adapters each carried as a private `_fetch_json`.
@@ -25,7 +25,7 @@ try:
 except ImportError:  # pragma: no cover - urllib fallback
     _USE_REQUESTS = False
 
-DEFAULT_UA = "paperadar/1.0"
+DEFAULT_UA = "paperradar/1.0"
 
 
 def fetch_json(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply agent relevance verdicts to a paperadar candidate pool.
+"""Apply agent relevance verdicts to a paperradar candidate pool.
 
 Mechanics only — the semantic judgment is the agent's (SKILL.md Step 2.7). This
 module applies it deterministically (ON first in rank order, BORDERLINE backfill

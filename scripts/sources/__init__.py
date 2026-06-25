@@ -1,8 +1,8 @@
-"""paperadar source adapters.
+"""paperradar source adapters.
 
 One module per external catalogue. Every module exposes a single entry point —
 `search_<name>(config, days=7, target_date=None) -> list[dict]` — returning the
-shared paperadar paper schema (see `search_papers.filter_and_score_papers`). The
+shared paperradar paper schema (see `search_papers.filter_and_score_papers`). The
 orchestrator (`scripts/search_papers.py`) discovers them by bare module name via
 its `_EXTRA_SOURCES` registry / bio-source imports, so adding a catalogue is one
 module here plus one registration line there.

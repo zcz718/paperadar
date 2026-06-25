@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-init_config.py — first-run setup wizard for the paperadar skill.
+init_config.py — first-run setup wizard for the paperradar skill.
 
 Asks the user a few questions, then writes a config.yaml to the appropriate
 location (Obsidian vault if they use Obsidian, otherwise XDG-style
-~/.config/paperadar/config.yaml).
+~/.config/paperradar/config.yaml).
 
 Usage:
     python scripts/init_config.py            # interactive wizard
@@ -22,7 +22,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_DIR = SCRIPT_DIR.parent
 EXAMPLE_CONFIG = REPO_DIR / "config.example.yaml"
-STANDALONE_CONFIG = Path.home() / ".config" / "paperadar" / "config.yaml"
+STANDALONE_CONFIG = Path.home() / ".config" / "paperradar" / "config.yaml"
 
 
 def prompt(question: str, default: str | None = None) -> str:
@@ -87,7 +87,7 @@ def patch_config_text(text: str, *, mode: str, vault_path: str,
 
     # output_dir
     out = out.replace(
-        'output_dir: "~/paperadar-output"',
+        'output_dir: "~/paperradar-output"',
         f'output_dir: "{output_dir}"',
     )
 
@@ -95,7 +95,7 @@ def patch_config_text(text: str, *, mode: str, vault_path: str,
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="First-run setup wizard for paperadar")
+    p = argparse.ArgumentParser(description="First-run setup wizard for paperradar")
     p.add_argument("--force", action="store_true",
                    help="Overwrite an existing config without prompting")
     p.add_argument("--dry-run", action="store_true",
@@ -115,7 +115,7 @@ def main() -> int:
 
     print()
     print("┌─────────────────────────────────────────────────────────────────┐")
-    print("│  paperadar — first-run setup                                    │")
+    print("│  paperradar — first-run setup                                    │")
     print("└─────────────────────────────────────────────────────────────────┘")
     print()
     print("This wizard will create your config file. You can re-edit it any")
@@ -142,11 +142,11 @@ def main() -> int:
 
     # Q2: output dir (only relevant for standalone)
     if use_obsidian:
-        output_dir = "~/paperadar-output"  # not used, but write a sensible default
+        output_dir = "~/paperradar-output"  # not used, but write a sensible default
     else:
         output_dir = prompt(
             "Where should plain-markdown weekly notes go?",
-            default="~/paperadar-output",
+            default="~/paperradar-output",
         )
 
     # Q3: Zotero
@@ -227,7 +227,7 @@ def main() -> int:
     print("      python scripts/show_keywords.py")
     print("  • Edit the config to customise your research interests:")
     print(f"      $EDITOR {dest}")
-    print("  • In Codex, ask: \"$paperadar Run my weekly paper recommendations.\"")
+    print("  • In Codex, ask: \"$paperradar Run my weekly paper recommendations.\"")
     print()
     return 0
 

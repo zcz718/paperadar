@@ -1,11 +1,11 @@
-# Design: Semantic rerank for paperadar weekly recommendations
+# Design: Semantic rerank for paperradar weekly recommendations
 
 **Date:** 2026-06-24
 **Status:** approved (brainstorming) — pending implementation plan
 
 ## Problem
 
-paperadar's keyword scoring builds a recall-oriented candidate list but cannot judge
+paperradar's keyword scoring builds a recall-oriented candidate list but cannot judge
 *semantic* relevance, so the weekly top-N still contains off-target papers. The cross-field
 QC and the `fix/scoring-precision` validation found two residual false-positive modes that
 keyword logic cannot fix:
@@ -26,7 +26,7 @@ Adopt **retrieve-then-rerank**: keep a cheap, recall-first keyword retrieve, the
 semantic rerank performed by the agent that already runs the skill, anchored on the
 `research_brief`. The keyword layer maximizes recall; the agent provides precision.
 
-- Run context: paperadar always runs with an agent in the loop (confirmed) — no headless
+- Run context: paperradar always runs with an agent in the loop (confirmed) — no headless
   judge needed; a no-agent fallback to keyword ranking keeps the pipeline robust.
 - Prune behavior: **prune + backfill to N** from a deeper candidate pool.
 - Discarded papers are simply dropped — not shown, listed, or counted in the weekly note.
@@ -94,7 +94,7 @@ top-N) exactly as today. The pipeline never breaks; it degrades to current preci
   for an unknown id ignored; empty/all-OFF pool handled.
 - **`search_arxiv.py` unit test:** `candidates` length == `pool_size`; `top_papers` ==
   first `top_n` of `candidates` (fallback intact); `--pool-size` default applied.
-- **End-to-end:** re-run the QC harness (`~/paperadar-qc-sandbox/_run_all.sh`) with the
+- **End-to-end:** re-run the QC harness (`~/paperradar-qc-sandbox/_run_all.sh`) with the
   rerank step; confirm the residual cases (humanitarian "early warning system" PFAS/volcano
   papers) are pruned and the bio top-N stays clean and full.
 

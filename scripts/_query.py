@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared keyword-collection helper for paperadar source adapters.
+"""Shared keyword-collection helper for paperradar source adapters.
 
 OpenAlex, Crossref, and CORE each build their query string from the same raw
 material: every keyword across all of the config's ``research_domains``, in

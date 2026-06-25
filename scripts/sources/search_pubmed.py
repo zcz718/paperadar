@@ -317,7 +317,7 @@ def _deduplicate(papers, existing_titles, threshold=0.85):
 def load_config(config_path=None):
     """Load research_interests.yaml; return config dict."""
     if config_path is None:
-        # Use shared resolver: --config (None here) → $OBSIDIAN_VAULT_PATH/... → ~/.config/paperadar/
+        # Use shared resolver: --config (None here) → $OBSIDIAN_VAULT_PATH/... → ~/.config/paperradar/
         try:
             sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
             from _config_paths import resolve_config_path

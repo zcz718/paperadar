@@ -1,26 +1,25 @@
 <p align="center">
-  <img src="assets/paperadar-hero.png" alt="PapeRadar — a multi-source, personalized paper radar for AI-for-Science that files results into your Obsidian and Zotero" width="900">
+  <img src="assets/paperradar-hero.png" alt="PaperRadar — a multi-source, personalized paper radar for AI-for-Science that files results into your Obsidian and Zotero" width="900">
 </p>
 
-# PapeRadar
+# PaperRadar
 
 *Paper + Radar — a multi-source, personalized paper radar for AI-for-Science. Each week it files new work into your Obsidian/Zotero knowledge base as linked, trackable notes, and runs as a Claude Code / Codex skill.*
 
 A weekly radar for the papers that matter to *you*. Point it at your research
-interests and it sweeps the past week across arXiv, Semantic Scholar, OpenAlex,
-and Crossref — plus CORE and the biomedical servers (bioRxiv, medRxiv, PubMed)
-when you want them — scores everything against your topics, and hands you a
-ranked note, written into your Obsidian vault or as plain Markdown in any folder.
+interests and it reaches across as many sources as it can — preprint servers,
+journal indexes, and open-access repositories — scores everything against your
+topics, and hands you a ranked note, written into your Obsidian vault or as
+plain Markdown in any folder.
 
 It runs as a [Claude Code](https://www.anthropic.com/claude-code) / Codex skill,
-so you can just say *"run my weekly papers"* and read the results, or drive the
-scripts directly from the command line.
+so you can just say *"run my weekly papers"* and read the results.
 
-## Why PapeRadar
+## Why PaperRadar
 
-Most paper tools watch a **single source** (usually arXiv) and stop at a ranked list. PapeRadar is built for **AI-for-Science** — work that spans fields and needs more than one feed:
+Most paper tools watch a **single source** and stop at a ranked list. PaperRadar is built for **AI-for-Science** — work that spans fields and needs more than one feed:
 
-- **Many sources, one personalized sweep.** arXiv, Semantic Scholar, OpenAlex, and Crossref together (plus PubMed/bioRxiv when relevant), all scored against *your* interests — not one site's firehose.
+- **Many sources, one personalized sweep.** Preprints, journals, and open repositories searched together, all scored against *your* interests — not one site's firehose.
 - **Papers become knowledge, not a feed.** Results are filed into your Obsidian vault and Zotero as linked, per-paper notes — turning a week's reading into a Karpathy-style LLM wiki you can track ideas across.
 - **No infrastructure.** No database, no embedding service, no web app — it runs as a Claude Code / Codex skill and uses the agent itself to judge relevance.
 
@@ -80,12 +79,12 @@ Three steps: install it, tell it what you study, run it weekly.
 Clone the repo, install dependencies, and symlink it into whichever runner you use:
 
 ```bash
-git clone https://github.com/zcz718/paperadar.git
-cd paperadar
+git clone https://github.com/zcz718/paperradar.git
+cd paperradar
 pip install -r requirements.txt
 
-ln -s "$(pwd)" ~/.claude/skills/paperadar      # Claude Code
-ln -s "$(pwd)" ~/.codex/skills/paperadar       # Codex (optional)
+ln -s "$(pwd)" ~/.claude/skills/paperradar      # Claude Code
+ln -s "$(pwd)" ~/.codex/skills/paperradar       # Codex (optional)
 ```
 
 `SKILL.md` finds its own directory at runtime, so one copy works under both.
@@ -93,28 +92,33 @@ ln -s "$(pwd)" ~/.codex/skills/paperadar       # Codex (optional)
 > **Dependencies.** Install the requirements into the interpreter the skill will
 > use (`python3 -m pip install -r requirements.txt`). If your default `python3`
 > doesn't have them, point the skill at the right one with
-> `export PAPERADAR_PYTHON=/path/to/python`. The skill preflight-checks this and
+> `export PAPERRADAR_PYTHON=/path/to/python`. The skill preflight-checks this and
 > fails loudly with instructions if anything is missing.
 
 ### 2. Tell it what you study
 
-Run the setup wizard — or just ask the agent "set me up". Both write the same config:
+Just tell the agent to set you up — *"set me up"* or *"configure my paper radar"* —
+and it builds your workflow conversationally: it asks for your research brief
+(one sentence on what you work on), whether you use Obsidian and Zotero, and
+where notes should go, then writes the config and tunes everything to how you
+work.
+
+Prefer a form to a chat? The wizard asks the same things:
 
 ```bash
 python scripts/init_config.py
 ```
 
-It asks for your research brief (one sentence on what you work on), whether you
-use Obsidian and Zotero, and where notes should go. That one sentence is what
-makes the picks sharp — see [Tell the agent your research focus](#tell-the-agent-your-research-focus-first).
+That one sentence of research brief is what makes the picks sharp — see
+[Tell the agent your research focus](#tell-the-agent-your-research-focus-first).
 
 ### 3. Run it
 
 Invoke it any of three ways:
 
-- **Slash command** — type `/paperadar` (works in both Claude Code and Codex).
+- **Slash command** — type `/paperradar` (works in both Claude Code and Codex).
 - **Natural language** — "run my weekly recommendations", "what am I tracking?"
-- **Codex `$` form** — `$paperadar` also triggers it explicitly in Codex.
+- **Codex `$` form** — `$paperradar` also triggers it explicitly in Codex.
 
 ## Configuration
 
@@ -178,7 +182,7 @@ that blend the final ranking. See the commented block in `config.example.yaml`.
 | `NCBI_API_KEY` | PubMed (optional) | Raises the rate limit 3→10 req/s |
 | `ZOTERO_API_KEY`, `ZOTERO_USER_ID` | Zotero sync | `ZOTERO_USER_ID` is the numeric ID |
 | `UNPAYWALL_EMAIL` | Unpaywall PDF fetch | Their ToS requires a contact email |
-| `PAPERADAR_PYTHON` | Pinning the interpreter | Use if default `python3` lacks deps |
+| `PAPERRADAR_PYTHON` | Pinning the interpreter | Use if default `python3` lacks deps |
 
 Keys exported in your shell rc files are picked up automatically, even from
 non-interactive runners.
@@ -186,7 +190,7 @@ non-interactive runners.
 ## Repository layout
 
 ```
-paperadar/
+paperradar/
 ├── SKILL.md                  # Claude Code / Codex skill driver
 ├── config.example.yaml       # template for research_interests.yaml
 ├── requirements.txt
@@ -212,7 +216,7 @@ paperadar/
 
 ## Credits & thanks
 
-PapeRadar started from [**evil-read-arxiv**](https://github.com/juliye2025/evil-read-arxiv)
+PaperRadar started from [**evil-read-arxiv**](https://github.com/juliye2025/evil-read-arxiv)
 by [juliye2025](https://github.com/juliye2025) — thank you for the head start.
 
 ## License

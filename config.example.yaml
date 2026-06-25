@@ -1,4 +1,4 @@
-# paperadar — research interests config example
+# paperradar — research interests config example
 #
 # Copy this file to:
 #   $OBSIDIAN_VAULT_PATH/99_System/Config/research_interests.yaml
@@ -9,7 +9,7 @@
 # To edit interactively, ask the agent (Claude Code / Codex):
 #   "show my research interests" / "add a keyword".
 #
-# paperadar works for ANY field — the example domains below are a
+# paperradar works for ANY field — the example domains below are a
 # cross-disciplinary illustration (AI/ML, AI-for-science, statistics,
 # economics). Replace them with your own topics; domain names are just labels.
 
@@ -41,7 +41,7 @@ output:
 
   standalone:
     # Where plain-markdown weekly notes go. Tilde is expanded.
-    output_dir: "~/paperadar-output"
+    output_dir: "~/paperradar-output"
 
 # Semantic Scholar API key (optional — reduces rate limiting)
 # Free key: https://www.semanticscholar.org/product/api#api-key
@@ -86,7 +86,7 @@ openalex:
 #   enabled: "auto"  — on by default (no key required).
 #            false    — turn it off.
 # Optional: export CROSSREF_EMAIL="you@example.org" for the faster polite pool
-# (paperadar also reuses UNPAYWALL_EMAIL if that is already set).
+# (paperradar also reuses UNPAYWALL_EMAIL if that is already set).
 crossref:
   enabled: "auto"
   max_results: 100
@@ -171,7 +171,7 @@ prioritize_journals:
 # are arbitrary labels. `priority` (1–5, where 3 is neutral) weights how a
 # matched paper RANKS: a priority-5 topic's matches rise to the top, a
 # priority-1 topic's sink — it does not exclude anything, it reorders.
-# `arxiv_categories` both controls which arXiv papers are fetched (paperadar
+# `arxiv_categories` both controls which arXiv papers are fetched (paperradar
 # uses the union of all categories below) and adds a relevance boost on a match.
 research_domains:
 

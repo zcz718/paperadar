@@ -1,6 +1,6 @@
 ---
-name: paperadar
-description: PapeRadar — weekly research-paper recommendations for any field — searches arXiv, Semantic Scholar, OpenAlex, Crossref (cross-disciplinary), and optionally CORE and bioRxiv/medRxiv/PubMed, scores them against your research interests, and writes a ranked weekly note. Supports Obsidian (wikilinks, vault) and standalone plain-Markdown modes.
+name: paperradar
+description: PaperRadar — weekly research-paper recommendations for any field — searches arXiv, Semantic Scholar, OpenAlex, Crossref (cross-disciplinary), and optionally CORE and bioRxiv/medRxiv/PubMed, scores them against your research interests, and writes a ranked weekly note. Supports Obsidian (wikilinks, vault) and standalone plain-Markdown modes.
 ---
 
 # First run — capture the user's research focus
@@ -9,7 +9,7 @@ description: PapeRadar — weekly research-paper recommendations for any field �
 these paths (in order):
 
 1. `$OBSIDIAN_VAULT_PATH/99_System/Config/research_interests.yaml`
-2. `~/.config/paperadar/config.yaml`
+2. `~/.config/paperradar/config.yaml`
 
 ### If a config IS found
 
@@ -35,13 +35,13 @@ field-agnostic). This is optional housekeeping — don't block the run on it.
 
 ### If NO config is found — run the wizard conversationally
 
-> "Looks like this is your first time running paperadar. Two minutes and you're set."
+> "Looks like this is your first time running paperradar. Two minutes and you're set."
 
 **Step 1 (the important one) — the research brief.** Ask:
 
 > "In a sentence or two, what do you work on? Your field, the methods or systems
 > you use, the questions you care about, and any keywords, authors, or venues
-> worth prioritizing. paperadar works for any field — ML, physics, math,
+> worth prioritizing. paperradar works for any field — ML, physics, math,
 > economics, biology, whatever yours is."
 
 From their answer, **build the `research_domains` block yourself**: pick 2–5
@@ -60,12 +60,12 @@ from the relevant arXiv groups (e.g. `cs.*`, `stat.*`, `math.*`, `physics.*`,
 > 2. **Obsidian?** (yes/no, default no) — if yes, ask for the vault path (or read
 >    `$OBSIDIAN_VAULT_PATH`); config goes to
 >    `<vault>/99_System/Config/research_interests.yaml`. If no, config goes to
->    `~/.config/paperadar/config.yaml`.
+>    `~/.config/paperradar/config.yaml`.
 > 3. **Zotero?** (yes/no, default no) — if yes, explain credentials come from env
 >    vars (`export ZOTERO_API_KEY=...` / `export ZOTERO_USER_ID=...` in `~/.zshrc`),
 >    not the YAML. If no, skip silently.
 > 4. **Output language?** (en / zh, default en). For standalone mode also confirm
->    the output dir (default `~/paperadar-output/`; create it if missing).
+>    the output dir (default `~/paperradar-output/`; create it if missing).
 
 Then **write the config yourself** by copying `config.example.yaml` and patching
 `research_brief`, `research_domains`, `bio_sources`, `output.mode`,
@@ -79,7 +79,7 @@ cd "$SKILL_DIR"
 
 Finally, **persist the focus to memory where your runner supports it** (Claude
 Code / Codex memory, `AGENTS.md`, etc.) as a single line — e.g.
-`[paperadar] User's research focus: <one-line summary>. Config: <path>.` — so a
+`[paperradar] User's research focus: <one-line summary>. Config: <path>.` — so a
 future session already knows it. The YAML remains the durable, every-run memory;
 this is just a convenience. If your runner has no memory feature, skip this.
 
@@ -88,7 +88,7 @@ brief too):
 
 ```bash
 # cd into the skill folder (Claude Code, Codex, or a clone), then run:
-cd "$([ -d "$HOME/.claude/skills/paperadar" ] && echo "$HOME/.claude/skills/paperadar" || echo "$HOME/.codex/skills/paperadar")"
+cd "$([ -d "$HOME/.claude/skills/paperradar" ] && echo "$HOME/.claude/skills/paperradar" || echo "$HOME/.codex/skills/paperradar")"
 python3 scripts/init_config.py
 ```
 
@@ -99,10 +99,10 @@ python3 scripts/init_config.py
 ```bash
 # Resolve SKILL_DIR for whichever runner hosts this skill — Claude Code,
 # Codex, or a bare git clone. Every `cd "$SKILL_DIR"` below depends on this.
-if [ -d "$HOME/.claude/skills/paperadar" ]; then
-    SKILL_DIR="$HOME/.claude/skills/paperadar"
-elif [ -d "$HOME/.codex/skills/paperadar" ]; then
-    SKILL_DIR="$HOME/.codex/skills/paperadar"
+if [ -d "$HOME/.claude/skills/paperradar" ]; then
+    SKILL_DIR="$HOME/.claude/skills/paperradar"
+elif [ -d "$HOME/.codex/skills/paperradar" ]; then
+    SKILL_DIR="$HOME/.codex/skills/paperradar"
 else
     # bare clone — resolve relative to this SKILL.md file
     SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
@@ -111,25 +111,25 @@ fi
 TODAY=$(date +%Y-%m-%d)
 
 # Scratch dir for intermediate JSON (Step 4 writes $OUTDIR/fulltext.json).
-OUTDIR="$(mktemp -d "${TMPDIR:-/tmp}/paperadar-XXXXXX")"
+OUTDIR="$(mktemp -d "${TMPDIR:-/tmp}/paperradar-XXXXXX")"
 
 # Pin a Python interpreter that actually has the deps. Bare `python3` on
 # macOS is frequently the system 3.9 with nothing installed, which makes
-# every script ImportError. Prefer $PAPERADAR_PYTHON if the user set
+# every script ImportError. Prefer $PAPERRADAR_PYTHON if the user set
 # it (e.g. a venv/conda python), else `python3`, then preflight-check.
-PY="${PAPERADAR_PYTHON:-python3}"
+PY="${PAPERRADAR_PYTHON:-python3}"
 if ! "$PY" -c "import yaml, requests" >/dev/null 2>&1; then
     echo "ERROR: required Python deps (PyYAML, requests) missing for '$PY'." >&2
     echo "  Fix:  $PY -m pip install -r \"$SKILL_DIR/requirements.txt\"" >&2
-    echo "  Or set PAPERADAR_PYTHON to an interpreter that has them." >&2
+    echo "  Or set PAPERRADAR_PYTHON to an interpreter that has them." >&2
     exit 1
 fi
 
 # Resolve config path (in priority order)
 if [ -n "$OBSIDIAN_VAULT_PATH" ] && [ -f "$OBSIDIAN_VAULT_PATH/99_System/Config/research_interests.yaml" ]; then
     CONFIG_PATH="$OBSIDIAN_VAULT_PATH/99_System/Config/research_interests.yaml"
-elif [ -f "$HOME/.config/paperadar/config.yaml" ]; then
-    CONFIG_PATH="$HOME/.config/paperadar/config.yaml"
+elif [ -f "$HOME/.config/paperradar/config.yaml" ]; then
+    CONFIG_PATH="$HOME/.config/paperradar/config.yaml"
 else
     CONFIG_PATH=""   # will use built-in defaults
 fi
@@ -150,7 +150,7 @@ PY
 fi
 
 # Derive the arXiv category set from the config (the union of every domain's
-# arxiv_categories). This is what makes paperadar field-agnostic — a CS user
+# arxiv_categories). This is what makes paperradar field-agnostic — a CS user
 # gets cs.* fetched, a physicist gets physics.*, etc. Falls back to a broad
 # cross-disciplinary default when the config is empty/missing.
 #
@@ -438,7 +438,7 @@ genuinely reproduced from the source.
 **Step 4.2B — fetch_fulltext.py (fallback / when no PMC ID)**
 
 ```bash
-cd "$SKILL_DIR"  # paperadar — scripts are in-tree
+cd "$SKILL_DIR"  # paperradar — scripts are in-tree
 "$PY" scripts/fetch_fulltext.py \
   --paper-id "{id}" --doi "{doi}" \
   --out "$OUTDIR/fulltext.json"
@@ -481,7 +481,7 @@ cd "$SKILL_DIR"  # paperadar — scripts are in-tree
   `launch_persistent_context(user_data_dir=<path>)` so `__cf_clearance`
   cookies survive across runs. A single manual CF clear in headed mode
   seeds the cookies; subsequent headless runs within cookie TTL bypass
-  the challenge entirely. Typical path: `~/.cache/paperadar-chrome-profile`.
+  the challenge entirely. Typical path: `~/.cache/paperradar-chrome-profile`.
 
 **Branching**:
 
@@ -514,7 +514,7 @@ Best-effort. Skip if no images extracted; don't block on this step.
 ### 4.4 Generate the verified note
 
 ```bash
-cd "$SKILL_DIR"  # paperadar — scripts are in-tree
+cd "$SKILL_DIR"  # paperradar — scripts are in-tree
 "$PY" scripts/generate_note.py \
   --paper-id "{id}" --doi "{doi}" \
   --title "{title}" --authors "{authors}" \

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Keyword linking script for the paperadar skill.
+Keyword linking script for the paperradar skill.
 Finds keywords in text and replaces them with Obsidian wikilinks.
 """
 

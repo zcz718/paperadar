@@ -1,10 +1,10 @@
 """
-Shared config-path resolution for paperadar scripts.
+Shared config-path resolution for paperradar scripts.
 
 Lookup order (first hit wins):
   1. Explicit path passed in (e.g. from --config CLI flag)
   2. $OBSIDIAN_VAULT_PATH/99_System/Config/research_interests.yaml  (Obsidian users)
-  3. ~/.config/paperadar/config.yaml                              (standalone users)
+  3. ~/.config/paperradar/config.yaml                              (standalone users)
   4. None — caller should fall back to built-in defaults
 """
 
@@ -16,7 +16,7 @@ from typing import Optional
 
 
 OBSIDIAN_CONFIG_REL = ("99_System", "Config", "research_interests.yaml")
-STANDALONE_CONFIG = Path.home() / ".config" / "paperadar" / "config.yaml"
+STANDALONE_CONFIG = Path.home() / ".config" / "paperradar" / "config.yaml"
 
 
 def resolve_config_path(explicit: Optional[str] = None) -> Optional[str]:

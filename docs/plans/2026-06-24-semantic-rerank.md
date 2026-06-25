@@ -105,7 +105,7 @@ Create `scripts/rerank_apply.py`:
 
 ```python
 #!/usr/bin/env python3
-"""Apply agent relevance verdicts to a paperadar candidate pool.
+"""Apply agent relevance verdicts to a paperradar candidate pool.
 
 Mechanics only — the semantic judgment is the agent's (SKILL.md Step 2.7). This
 module applies it deterministically (ON first in rank order, BORDERLINE backfill
@@ -334,7 +334,7 @@ def _split_pool(unique_papers, pool_size, top_n):
     top_papers = unique_papers[:args.top_n]
 
     # Add note_filename to each paper, matching generate_note.py's naming rules,
-    # so paperadar wikilinks can use this field directly without re-deriving it.
+    # so paperradar wikilinks can use this field directly without re-deriving it.
     for paper in top_papers:
         paper['note_filename'] = title_to_note_filename(paper.get('title', ''))
 ```
@@ -525,7 +525,7 @@ for a human-reviewed recommender.
 Run a dry render against a hand-made pool to confirm wiring (no network):
 
 ```bash
-cd /Users/chuzhi_zhao/research/08_code/github_repos/paperadar
+cd /Users/chuzhi_zhao/research/08_code/github_repos/paperradar
 TMP=$(mktemp -d)
 printf '%s' '{"candidates":[{"id":"x1","title":"On topic","abstract":"a"},{"id":"x2","title":"Off topic","abstract":"b"}],"top_papers":[]}' > "$TMP/af.json"
 printf '%s' '{"x1":"ON","x2":"OFF"}' > "$TMP/v.json"
@@ -554,13 +554,13 @@ Expected: PASS (all — baseline + scoring + rerank).
 
 - [ ] **Step 2: Re-run the QC harness with the rerank wired in**
 
-The harness (`~/paperadar-qc-sandbox/_run_all.sh`) runs `search_arxiv.py` (now emitting `candidates`) but NOT the agent rerank (it's a script). To validate the rerank end-to-end, run the agent rerank manually on one residual case: take `~/paperadar-qc-sandbox/humanitarian-realistic-full/arxiv_filtered.json`, judge its `candidates` against the humanitarian-forecasting brief, write verdicts, run `rerank_apply.py`, and confirm the "early warning system" PFAS/volcano papers are now absent from `top_papers` while genuine forecasting papers remain.
+The harness (`~/paperradar-qc-sandbox/_run_all.sh`) runs `search_arxiv.py` (now emitting `candidates`) but NOT the agent rerank (it's a script). To validate the rerank end-to-end, run the agent rerank manually on one residual case: take `~/paperradar-qc-sandbox/humanitarian-realistic-full/arxiv_filtered.json`, judge its `candidates` against the humanitarian-forecasting brief, write verdicts, run `rerank_apply.py`, and confirm the "early warning system" PFAS/volcano papers are now absent from `top_papers` while genuine forecasting papers remain.
 
 Expected: the PFAS and volcano papers are dropped; `top_papers` is on-target and full (up to 10) via backfill.
 
 - [ ] **Step 3: Confirm bio is preserved**
 
-Manually rerank `~/paperadar-qc-sandbox/biology/arxiv_filtered.json` candidates against the L1HS/Nanopore brief; confirm the genuinely on-topic TE/long-read/m6A papers survive and generic spatial-transcriptomics items are dropped, with the list backfilled to N.
+Manually rerank `~/paperradar-qc-sandbox/biology/arxiv_filtered.json` candidates against the L1HS/Nanopore brief; confirm the genuinely on-topic TE/long-read/m6A papers survive and generic spatial-transcriptomics items are dropped, with the list backfilled to N.
 
 - [ ] **Step 4: Commit any harness/notes updates (optional)**
 
