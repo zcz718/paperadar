@@ -112,34 +112,9 @@ makes the picks sharp — see [Tell the agent your research focus](#tell-the-age
 
 Invoke it any of three ways:
 
-- **Slash command** — type `/paperadar` in Claude Code.
+- **Slash command** — type `/paperadar` (works in both Claude Code and Codex).
 - **Natural language** — "run my weekly recommendations", "what am I tracking?"
-- **Codex** — the explicit `$paperadar …` form (the most reliable trigger there).
-
-### Running without an agent (command line)
-
-The scripts also run directly. A pure command-line run uses the keyword ranking
-only — the brief-aware rerank is a skill step (it needs your `research_brief`
-and a model).
-
-```bash
-# See what you're tracking (and your saved brief)
-python scripts/show_keywords.py
-
-# Run the search — categories come from your config; 7-day window
-python scripts/search_papers.py \
-  --config /path/to/research_interests.yaml \
-  --output arxiv_filtered.json \
-  --max-results 200 --top-n 10 --days 7 \
-  --categories "cs.LG,cs.AI,stat.ML"
-
-# Turn the results into a weekly index + per-paper notes
-python scripts/materialize_weekly_notes.py --input arxiv_filtered.json
-```
-
-The config is auto-detected from the standard locations; pass `--config` to
-override. Lookup order: `$OBSIDIAN_VAULT_PATH/99_System/Config/research_interests.yaml`,
-then `~/.config/paperadar/config.yaml`, then built-in defaults.
+- **Codex `$` form** — `$paperadar` also triggers it explicitly in Codex.
 
 ## Configuration
 
@@ -161,18 +136,22 @@ biophysics paper in PubMed still reaches a physicist). What it takes to be
 included is a real keyword match (about one title hit); what it takes to rank
 near the top is that match landing in a high-`priority` topic.
 
-**Sources beyond arXiv + Semantic Scholar** (both always run and both span
-every discipline):
+**Sources.** Every source is a peer: each is searched and re-scored the same
+way, and which site a paper comes from never changes its rank (see *Relevance,
+not source tiers* above). They differ only in whether they need a key or a
+signal to switch on:
 
 | Setting | Source | Behaviour |
 |---|---|---|
+| _(always on)_ | arXiv | No key. Preprints in the arXiv categories your config lists. |
+| _(always on)_ | Semantic Scholar | No key. High-citation papers from the past year. |
 | `crossref.enabled: auto` | Crossref (~180M DOIs, all fields) | On by default — no key needed. Catches freshly-registered papers across every field, often before aggregators index them. |
 | `bio_sources: auto` | bioRxiv, medRxiv, PubMed | Included automatically when your topics look biomedical (a `q-bio.*` category or a biomedical keyword), so non-biomedical fields stay clean. Set `true` to always search them, `false` to never. |
 | `openalex.enabled: auto` | OpenAlex (~270M works, all fields) | Needs `OPENALEX_API_KEY` ([free](https://openalex.org), under a minute) — a key is required to reach OpenAlex at all. Skipped silently without one. |
 | `core.enabled: false` | CORE (~400M OA works) | Open-access repositories — theses, working papers, deposits. Off by default: CORE surfaces recently-deposited (not newly-published) work that rarely changes a weekly list. Turn on with `auto`/`true` plus `CORE_API_KEY` ([free](https://core.ac.uk/services/api)). |
 
-Every source returns results in one schema and gets re-scored — source-neutrally
-— against your config, so adding a source only ever widens coverage.
+Adding a source only ever widens coverage — every result lands in one schema and
+competes on relevance alone.
 
 **Journal filter.** `prioritize_journals` restricts PubMed and Semantic Scholar
 to a list of venues (journals or conferences). Preprints, OpenAlex, Crossref,
