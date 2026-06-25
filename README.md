@@ -1,4 +1,6 @@
-# paperadar
+# PapeRadar
+
+*Paper + Radar — a weekly, personalized paper digest that runs as a Claude Code / Codex skill and files results straight into your Obsidian and Zotero.*
 
 A weekly radar for the papers that matter to *you*. Point it at your research
 interests and it sweeps the past week across arXiv, Semantic Scholar, OpenAlex,
@@ -209,14 +211,14 @@ paperadar/
 
 ## Credits & thanks
 
-paperadar grew out of [**evil-read-arxiv**](https://github.com/juliye2025/evil-read-arxiv)
+PapeRadar grew out of [**evil-read-arxiv**](https://github.com/juliye2025/evil-read-arxiv)
 by [juliye2025](https://github.com/juliye2025) — the arXiv + Semantic Scholar
 search and scoring skeleton that gave this project its start. Thank you for the
 head start.
 
 evil-read-arxiv is published without a license, so as a courtesy: if you'd like
 to build on *that* original code, it's worth checking in with the author first.
-Everything added in paperadar — the OpenAlex and multi-source search, the
+Everything added in PapeRadar — the OpenAlex and multi-source search, the
 Obsidian and Zotero integrations, the brief-based onboarding, and the
 orchestration in `SKILL.md` and `scripts/` — is released under MIT.
 

@@ -1,6 +1,6 @@
 ---
 name: paperadar
-description: Weekly research-paper recommendations for any field — searches arXiv, Semantic Scholar, OpenAlex, Crossref (cross-disciplinary), and optionally CORE and bioRxiv/medRxiv/PubMed, scores them against your research interests, and writes a ranked weekly note. Supports Obsidian (wikilinks, vault) and standalone plain-Markdown modes.
+description: PapeRadar — weekly research-paper recommendations for any field — searches arXiv, Semantic Scholar, OpenAlex, Crossref (cross-disciplinary), and optionally CORE and bioRxiv/medRxiv/PubMed, scores them against your research interests, and writes a ranked weekly note. Supports Obsidian (wikilinks, vault) and standalone plain-Markdown modes.
 ---
 
 # First run — capture the user's research focus
